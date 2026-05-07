@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -15,6 +15,7 @@ export const Route = createFileRoute("/admin")({ component: AdminHome });
 function AdminHome() {
   const { role, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!loading && role && role !== "admin") navigate({ to: "/" });
@@ -44,13 +45,17 @@ function AdminHome() {
     },
   });
 
+  if (location.pathname !== "/admin") {
+    return <Outlet />;
+  }
+
   return (
     <AppShell>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-semibold">All jobs</h1>
-        <Link to="/admin/new">
-          <Button size="sm"><Plus className="h-4 w-4 mr-1" />New</Button>
-        </Link>
+        <Button asChild size="sm">
+          <Link to="/admin/new"><Plus className="h-4 w-4 mr-1" />New</Link>
+        </Button>
       </div>
       <div className="space-y-3">
         {jobs?.map((j) => (
