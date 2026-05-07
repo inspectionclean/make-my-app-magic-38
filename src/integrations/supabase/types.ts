@@ -289,6 +289,7 @@ export type Database = {
           mgmt_email: string | null
           report_sent_at: string | null
           scheduled_at: string
+          service_type: string | null
           status: Database["public"]["Enums"]["job_status"]
           updated_at: string
         }
@@ -307,6 +308,7 @@ export type Database = {
           mgmt_email?: string | null
           report_sent_at?: string | null
           scheduled_at: string
+          service_type?: string | null
           status?: Database["public"]["Enums"]["job_status"]
           updated_at?: string
         }
@@ -325,6 +327,7 @@ export type Database = {
           mgmt_email?: string | null
           report_sent_at?: string | null
           scheduled_at?: string
+          service_type?: string | null
           status?: Database["public"]["Enums"]["job_status"]
           updated_at?: string
         }
