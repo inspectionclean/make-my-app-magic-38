@@ -114,6 +114,7 @@ export type Database = {
           email: string
           equipment: string[] | null
           fans: number | null
+          filters: Json | null
           fire_suppression: boolean | null
           frequency: string | null
           hoods: number | null
@@ -148,6 +149,7 @@ export type Database = {
           email: string
           equipment?: string[] | null
           fans?: number | null
+          filters?: Json | null
           fire_suppression?: boolean | null
           frequency?: string | null
           hoods?: number | null
@@ -182,6 +184,7 @@ export type Database = {
           email?: string
           equipment?: string[] | null
           fans?: number | null
+          filters?: Json | null
           fire_suppression?: boolean | null
           frequency?: string | null
           hoods?: number | null
