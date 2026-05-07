@@ -1,26 +1,80 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { AppShell } from "@/components/AppShell";
+import { useAuth } from "@/lib/auth";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Clock, ChevronRight, CalendarDays } from "lucide-react";
+import { format, isToday, isTomorrow, isPast } from "date-fns";
 
-export const Route = createFileRoute("/")({
-  component: Index,
-});
+export const Route = createFileRoute("/")({ component: SchedulePage });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function SchedulePage() {
+  const { user, role } = useAuth();
+
+  const { data: jobs, isLoading } = useQuery({
+    queryKey: ["my-jobs", user?.id, role],
+    enabled: !!user,
+    queryFn: async () => {
+      let q = supabase.from("jobs").select("*").order("scheduled_at", { ascending: true });
+      if (role !== "admin") q = q.eq("assigned_to", user!.id);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <AppShell>
+      <div className="space-y-1 mb-5">
+        <p className="text-sm text-muted-foreground">{format(new Date(), "EEEE, MMM d")}</p>
+        <h1 className="text-2xl font-semibold tracking-tight">My schedule</h1>
+      </div>
+      {isLoading ? (
+        <p className="text-muted-foreground text-sm">Loading…</p>
+      ) : !jobs?.length ? (
+        <Card className="p-8 text-center">
+          <CalendarDays className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+          <p className="font-medium">No jobs scheduled</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {role === "admin" ? "Create a job from the Admin tab." : "Check back soon."}
+          </p>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {jobs.map((j) => {
+            const dt = new Date(j.scheduled_at);
+            const label = isToday(dt) ? "Today" : isTomorrow(dt) ? "Tomorrow" : format(dt, "EEE, MMM d");
+            return (
+              <Link key={j.id} to="/jobs/$id" params={{ id: j.id }}>
+                <Card className="p-4 active:scale-[0.99] transition hover:shadow-md cursor-pointer">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant={j.status === "completed" ? "secondary" : "default"} className="capitalize">
+                          {j.status.replace("_", " ")}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{label}</span>
+                      </div>
+                      <h3 className="font-semibold truncate">{j.customer_name}</h3>
+                      <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                        <Clock className="h-3.5 w-3.5" />
+                        {format(dt, "h:mm a")}
+                      </div>
+                      <div className="text-sm text-muted-foreground flex items-start gap-1 mt-1">
+                        <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                        <span className="truncate">{j.address}</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                  </div>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </AppShell>
   );
-}
-
-function Index() {
-  return <PlaceholderIndex />;
 }
