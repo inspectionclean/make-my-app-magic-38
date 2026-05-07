@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PerformanceReportRouteImport } from './routes/performance-report'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -17,6 +18,11 @@ import { Route as JobsIdRouteImport } from './routes/jobs.$id'
 import { Route as ApiSendReportRouteImport } from './routes/api/send-report'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 
+const PerformanceReportRoute = PerformanceReportRouteImport.update({
+  id: '/performance-report',
+  path: '/performance-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/intake': typeof IntakeRoute
   '/login': typeof LoginRoute
+  '/performance-report': typeof PerformanceReportRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/jobs/$id': typeof JobsIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/intake': typeof IntakeRoute
   '/login': typeof LoginRoute
+  '/performance-report': typeof PerformanceReportRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/jobs/$id': typeof JobsIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/intake': typeof IntakeRoute
   '/login': typeof LoginRoute
+  '/performance-report': typeof PerformanceReportRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/jobs/$id': typeof JobsIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/intake'
     | '/login'
+    | '/performance-report'
     | '/api/send-report'
     | '/jobs/$id'
     | '/lovable/email/queue/process'
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/intake'
     | '/login'
+    | '/performance-report'
     | '/api/send-report'
     | '/jobs/$id'
     | '/lovable/email/queue/process'
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/intake'
     | '/login'
+    | '/performance-report'
     | '/api/send-report'
     | '/jobs/$id'
     | '/lovable/email/queue/process'
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   IntakeRoute: typeof IntakeRoute
   LoginRoute: typeof LoginRoute
+  PerformanceReportRoute: typeof PerformanceReportRoute
   ApiSendReportRoute: typeof ApiSendReportRoute
   JobsIdRoute: typeof JobsIdRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -124,6 +137,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/performance-report': {
+      id: '/performance-report'
+      path: '/performance-report'
+      fullPath: '/performance-report'
+      preLoaderRoute: typeof PerformanceReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   IntakeRoute: IntakeRoute,
   LoginRoute: LoginRoute,
+  PerformanceReportRoute: PerformanceReportRoute,
   ApiSendReportRoute: ApiSendReportRoute,
   JobsIdRoute: JobsIdRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
@@ -188,3 +209,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
