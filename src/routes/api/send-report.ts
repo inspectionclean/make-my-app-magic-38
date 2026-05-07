@@ -64,14 +64,19 @@ export const Route = createFileRoute("/api/send-report")({
           const apiKey = process.env.LOVABLE_API_KEY;
           if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
           for (const to of recipients) {
-            await sendLovableEmail({
-              apiKey,
-              senderDomain: "notify.inspectionclean.com",
-              from: "Inspection Clean <service@notify.inspectionclean.com>",
-              to,
-              subject: `Service report — ${job.customer_name}`,
-              html,
-            });
+            await sendLovableEmail(
+              {
+                from: "Inspection Clean <service@notify.inspectionclean.com>",
+                sender_domain: "notify.inspectionclean.com",
+                to,
+                subject: `Service report — ${job.customer_name}`,
+                html,
+                text: `Service report for ${job.customer_name} on ${new Date(job.scheduled_at).toLocaleString()}.`,
+                label: "service-report",
+                idempotency_key: `service-report-${jobId}-${to}`,
+              },
+              { apiKey },
+            );
           }
           await supabaseAdmin.from("jobs").update({ report_sent_at: new Date().toISOString() }).eq("id", jobId);
         } catch (e: any) {
