@@ -16,6 +16,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsIdRouteImport } from './routes/jobs.$id'
 import { Route as ApiSendReportRouteImport } from './routes/api/send-report'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminNewRouteImport } from './routes/admin.new'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 
@@ -54,6 +55,11 @@ const ApiSendReportRoute = ApiSendReportRouteImport.update({
   path: '/api/send-report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminNewRoute = AdminNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/performance-report': typeof PerformanceReportRoute
   '/admin/new': typeof AdminNewRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/jobs/$id': typeof JobsIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/performance-report': typeof PerformanceReportRoute
   '/admin/new': typeof AdminNewRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/jobs/$id': typeof JobsIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/performance-report': typeof PerformanceReportRoute
   '/admin/new': typeof AdminNewRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/jobs/$id': typeof JobsIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/performance-report'
     | '/admin/new'
+    | '/admin/users'
     | '/api/send-report'
     | '/jobs/$id'
     | '/lovable/email/queue/process'
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/performance-report'
     | '/admin/new'
+    | '/admin/users'
     | '/api/send-report'
     | '/jobs/$id'
     | '/lovable/email/queue/process'
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/performance-report'
     | '/admin/new'
+    | '/admin/users'
     | '/api/send-report'
     | '/jobs/$id'
     | '/lovable/email/queue/process'
@@ -198,6 +210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSendReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/new': {
       id: '/admin/new'
       path: '/new'
@@ -217,10 +236,12 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminNewRoute: typeof AdminNewRoute
+  AdminUsersRoute: typeof AdminUsersRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminNewRoute: AdminNewRoute,
+  AdminUsersRoute: AdminUsersRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

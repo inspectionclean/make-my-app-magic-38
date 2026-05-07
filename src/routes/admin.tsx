@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MapPin, Clock } from "lucide-react";
+import { Plus, MapPin, Users } from "lucide-react";
 import { format } from "date-fns";
 import { useEffect } from "react";
 
@@ -53,9 +53,14 @@ function AdminHome() {
     <AppShell>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-semibold">All jobs</h1>
-        <Button asChild size="sm">
-          <Link to="/admin/new"><Plus className="h-4 w-4 mr-1" />New</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link to="/admin/users"><Users className="h-4 w-4 mr-1" />Team</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link to="/admin/new"><Plus className="h-4 w-4 mr-1" />New</Link>
+          </Button>
+        </div>
       </div>
       <div className="space-y-3">
         {jobs?.map((j) => (
