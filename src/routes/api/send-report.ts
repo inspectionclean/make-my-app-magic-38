@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { sendLovableEmail } from "@lovable.dev/email-js";
 
 export const Route = createFileRoute("/api/send-report")({
   server: {
@@ -52,25 +53,34 @@ export const Route = createFileRoute("/api/send-report")({
             ${after.length ? `<h3 style="margin:16px 0 4px">After</h3>${after.map((p) => `<a href="${p.url}"><img src="${p.url}" style="max-width:280px;margin:4px;border-radius:6px"/></a>`).join("")}` : ""}
           </div>`;
 
-        const recipients = [job.customer_email, job.mgmt_email].filter(Boolean) as string[];
-        if (recipients.length === 0) return new Response("No recipients (set customer email or mgmt email)", { status: 400 });
+        const ALWAYS_CC = "service@inspectionclean.com";
+        const recipients = Array.from(
+          new Set(
+            [job.customer_email, job.mgmt_email, ALWAYS_CC].filter(Boolean) as string[],
+          ),
+        );
 
-        // Try Lovable email API; fall back gracefully
         try {
           const apiKey = process.env.LOVABLE_API_KEY;
-          if (!apiKey) throw new Error("Email not configured yet");
-          const res = await fetch("https://api.lovable.dev/v1/email/send", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-            body: JSON.stringify({
-              to: recipients,
-              subject: `Service report — ${job.customer_name}`,
-              html,
-            }),
-          });
-          if (!res.ok) throw new Error(await res.text());
+          if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
+          for (const to of recipients) {
+            await sendLovableEmail(
+              {
+                from: "Inspection Clean <service@notify.inspectionclean.com>",
+                sender_domain: "notify.inspectionclean.com",
+                to,
+                subject: `Service report — ${job.customer_name}`,
+                html,
+                text: `Service report for ${job.customer_name} on ${new Date(job.scheduled_at).toLocaleString()}.`,
+                label: "service-report",
+                idempotency_key: `service-report-${jobId}-${to}`,
+              },
+              { apiKey },
+            );
+          }
+          await supabaseAdmin.from("jobs").update({ report_sent_at: new Date().toISOString() }).eq("id", jobId);
         } catch (e: any) {
-          return new Response(`Email infrastructure not set up yet. Please configure your email domain in Cloud → Emails. (${e.message})`, { status: 500 });
+          return new Response(`Failed to send report: ${e.message}`, { status: 500 });
         }
 
         return Response.json({ ok: true });
