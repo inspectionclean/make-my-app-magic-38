@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Plus, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -86,6 +87,15 @@ function IntakePage() {
   const [accessPanels, setAccessPanels] = useState<string>("");
   const [roofAccess, setRoofAccess] = useState<string>("");
   const [frequency, setFrequency] = useState<string>("");
+  const [filters, setFilters] = useState<{ size: string; qty: string }[]>([
+    { size: "", qty: "" },
+  ]);
+
+  const updateFilter = (i: number, key: "size" | "qty", value: string) =>
+    setFilters((prev) => prev.map((f, idx) => (idx === i ? { ...f, [key]: value } : f)));
+  const addFilter = () => setFilters((prev) => [...prev, { size: "", qty: "" }]);
+  const removeFilter = (i: number) =>
+    setFilters((prev) => (prev.length === 1 ? prev : prev.filter((_, idx) => idx !== i)));
 
   const toggleEquipment = (value: string, checked: boolean) => {
     setEquipment((prev) =>
@@ -136,6 +146,12 @@ function IntakePage() {
       equipment: equipment.length ? equipment : null,
       last_cleaning: raw.last_cleaning || null,
       frequency: frequency || null,
+      filters: (() => {
+        const cleaned = filters
+          .map((f) => ({ size: f.size.trim(), qty: f.qty.trim() }))
+          .filter((f) => f.size || f.qty);
+        return cleaned.length ? cleaned : null;
+      })(),
     });
     setSubmitting(false);
 
@@ -263,6 +279,47 @@ function IntakePage() {
           <Field label="Other" id="other_equipment">
             <Input id="other_equipment" name="other_equipment" />
           </Field>
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-foreground">Filter Sizes</p>
+            {filters.map((f, i) => (
+              <div key={i} className="grid grid-cols-[1fr_auto_auto] gap-2 items-end sm:grid-cols-[1fr_140px_auto]">
+                <div className="space-y-1">
+                  {i === 0 && <Label htmlFor={`filter_size_${i}`} className="text-xs">Filter size</Label>}
+                  <Input
+                    id={`filter_size_${i}`}
+                    placeholder='e.g. 20" x 20"'
+                    value={f.size}
+                    onChange={(e) => updateFilter(i, "size", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  {i === 0 && <Label htmlFor={`filter_qty_${i}`} className="text-xs">Filter qty</Label>}
+                  <Input
+                    id={`filter_qty_${i}`}
+                    type="number"
+                    min={0}
+                    placeholder="Qty"
+                    value={f.qty}
+                    onChange={(e) => updateFilter(i, "qty", e.target.value)}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeFilter(i)}
+                  disabled={filters.length === 1}
+                  aria-label="Remove filter size"
+                  className={i === 0 ? "self-end" : ""}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            <Button type="button" variant="outline" size="sm" onClick={addFilter}>
+              <Plus className="h-4 w-4 mr-1" />Add another size
+            </Button>
+          </div>
         </Section>
 
         <Section title="Service History">
