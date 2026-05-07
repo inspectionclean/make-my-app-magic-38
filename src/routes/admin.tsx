@@ -53,9 +53,9 @@ function AdminHome() {
     <AppShell>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-semibold">All jobs</h1>
-        <Link to="/admin/new">
-          <Button size="sm"><Plus className="h-4 w-4 mr-1" />New</Button>
-        </Link>
+        <Button asChild size="sm">
+          <Link to="/admin/new"><Plus className="h-4 w-4 mr-1" />New</Link>
+        </Button>
       </div>
       <div className="space-y-3">
         {jobs?.map((j) => (
