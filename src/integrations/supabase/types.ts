@@ -330,6 +330,138 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_reports: {
+        Row: {
+          access_panel_condition: string | null
+          access_panels: boolean | null
+          address: string
+          airflow_check: string | null
+          areas_cleaned: string[] | null
+          arrival_time: string | null
+          business_name: string
+          city: string
+          completion_time: string | null
+          condition_after: string | null
+          condition_before: string | null
+          contact_name: string
+          created_at: string
+          customer_rep: string | null
+          customer_signature: string | null
+          duct_runs: number | null
+          email: string | null
+          fan_check: string | null
+          fans: number | null
+          filter_condition: string | null
+          findings: string | null
+          fire_suppression: boolean | null
+          grease_level: string | null
+          hoods: number | null
+          id: string
+          other_cleaned: string | null
+          phone: string
+          photos: string[] | null
+          previous_cleaning_date: string | null
+          recommendation_items: string[] | null
+          recommendations: string | null
+          roof_access: boolean | null
+          service_date: string
+          service_type: string | null
+          signature_date: string
+          state: string
+          submitted_by: string | null
+          technician_name: string | null
+          technician_signature: string | null
+          technicians: string | null
+          zip: string
+        }
+        Insert: {
+          access_panel_condition?: string | null
+          access_panels?: boolean | null
+          address: string
+          airflow_check?: string | null
+          areas_cleaned?: string[] | null
+          arrival_time?: string | null
+          business_name: string
+          city: string
+          completion_time?: string | null
+          condition_after?: string | null
+          condition_before?: string | null
+          contact_name: string
+          created_at?: string
+          customer_rep?: string | null
+          customer_signature?: string | null
+          duct_runs?: number | null
+          email?: string | null
+          fan_check?: string | null
+          fans?: number | null
+          filter_condition?: string | null
+          findings?: string | null
+          fire_suppression?: boolean | null
+          grease_level?: string | null
+          hoods?: number | null
+          id?: string
+          other_cleaned?: string | null
+          phone: string
+          photos?: string[] | null
+          previous_cleaning_date?: string | null
+          recommendation_items?: string[] | null
+          recommendations?: string | null
+          roof_access?: boolean | null
+          service_date: string
+          service_type?: string | null
+          signature_date: string
+          state: string
+          submitted_by?: string | null
+          technician_name?: string | null
+          technician_signature?: string | null
+          technicians?: string | null
+          zip: string
+        }
+        Update: {
+          access_panel_condition?: string | null
+          access_panels?: boolean | null
+          address?: string
+          airflow_check?: string | null
+          areas_cleaned?: string[] | null
+          arrival_time?: string | null
+          business_name?: string
+          city?: string
+          completion_time?: string | null
+          condition_after?: string | null
+          condition_before?: string | null
+          contact_name?: string
+          created_at?: string
+          customer_rep?: string | null
+          customer_signature?: string | null
+          duct_runs?: number | null
+          email?: string | null
+          fan_check?: string | null
+          fans?: number | null
+          filter_condition?: string | null
+          findings?: string | null
+          fire_suppression?: boolean | null
+          grease_level?: string | null
+          hoods?: number | null
+          id?: string
+          other_cleaned?: string | null
+          phone?: string
+          photos?: string[] | null
+          previous_cleaning_date?: string | null
+          recommendation_items?: string[] | null
+          recommendations?: string | null
+          roof_access?: boolean | null
+          service_date?: string
+          service_type?: string | null
+          signature_date?: string
+          state?: string
+          submitted_by?: string | null
+          technician_name?: string | null
+          technician_signature?: string | null
+          technicians?: string | null
+          zip?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
