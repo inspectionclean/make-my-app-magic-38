@@ -52,8 +52,12 @@ export const Route = createFileRoute("/api/send-report")({
             ${after.length ? `<h3 style="margin:16px 0 4px">After</h3>${after.map((p) => `<a href="${p.url}"><img src="${p.url}" style="max-width:280px;margin:4px;border-radius:6px"/></a>`).join("")}` : ""}
           </div>`;
 
-        const recipients = [job.customer_email, job.mgmt_email].filter(Boolean) as string[];
-        if (recipients.length === 0) return new Response("No recipients (set customer email or mgmt email)", { status: 400 });
+        const ALWAYS_CC = "service@inspectionclean.com";
+        const recipients = Array.from(
+          new Set(
+            [job.customer_email, job.mgmt_email, ALWAYS_CC].filter(Boolean) as string[],
+          ),
+        );
 
         // Try Lovable email API; fall back gracefully
         try {
@@ -64,6 +68,7 @@ export const Route = createFileRoute("/api/send-report")({
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
             body: JSON.stringify({
               to: recipients,
+              from: "service@notify.inspectionclean.com",
               subject: `Service report — ${job.customer_name}`,
               html,
             }),
