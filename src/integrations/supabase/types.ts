@@ -112,6 +112,8 @@ export type Database = {
           created_at: string
           duct_runs: number | null
           email: string
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
           equipment: string[] | null
           fans: number | null
           filters: Json | null
@@ -147,6 +149,8 @@ export type Database = {
           created_at?: string
           duct_runs?: number | null
           email: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           equipment?: string[] | null
           fans?: number | null
           filters?: Json | null
@@ -182,6 +186,8 @@ export type Database = {
           created_at?: string
           duct_runs?: number | null
           email?: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           equipment?: string[] | null
           fans?: number | null
           filters?: Json | null

@@ -73,6 +73,8 @@ const schema = z.object({
   access_time: z.string().trim().max(200).optional().or(z.literal("")),
   onsite_name: z.string().trim().max(200).optional().or(z.literal("")),
   onsite_phone: z.string().trim().max(50).optional().or(z.literal("")),
+  emergency_contact_name: z.string().trim().max(200).optional().or(z.literal("")),
+  emergency_contact_phone: z.string().trim().max(50).optional().or(z.literal("")),
   problem_areas: z.string().trim().max(2000).optional().or(z.literal("")),
   other_equipment: z.string().trim().max(300).optional().or(z.literal("")),
   previous_company: z.string().trim().max(200).optional().or(z.literal("")),
@@ -133,6 +135,8 @@ function IntakePage() {
       access_time: parsed.data.access_time || null,
       onsite_name: parsed.data.onsite_name || null,
       onsite_phone: parsed.data.onsite_phone || null,
+      emergency_contact_name: parsed.data.emergency_contact_name || null,
+      emergency_contact_phone: parsed.data.emergency_contact_phone || null,
       problem_areas: parsed.data.problem_areas || null,
       other_equipment: parsed.data.other_equipment || null,
       previous_company: parsed.data.previous_company || null,
@@ -240,6 +244,12 @@ function IntakePage() {
           </Field>
           <Field label="On-Site Contact Phone" id="onsite_phone">
             <Input id="onsite_phone" name="onsite_phone" type="tel" autoComplete="tel" />
+          </Field>
+          <Field label="Emergency Contact Name" id="emergency_contact_name">
+            <Input id="emergency_contact_name" name="emergency_contact_name" />
+          </Field>
+          <Field label="Emergency Contact Phone" id="emergency_contact_phone">
+            <Input id="emergency_contact_phone" name="emergency_contact_phone" type="tel" autoComplete="tel" />
           </Field>
         </Section>
 
