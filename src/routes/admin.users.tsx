@@ -6,13 +6,14 @@ import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ShieldCheck, User as UserIcon } from "lucide-react";
+import { ArrowLeft, ShieldCheck, User as UserIcon, Briefcase } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/users")({ component: UsersPage });
 
-type RoleRow = { user_id: string; role: "admin" | "employee" };
+type AppRole = "admin" | "employee" | "office";
+type RoleRow = { user_id: string; role: AppRole };
 type ProfileRow = { id: string; full_name: string | null };
 
 function UsersPage() {
@@ -44,36 +45,30 @@ function UsersPage() {
     },
   });
 
-  const promote = useMutation({
-    mutationFn: async (userId: string) => {
-      const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Promoted to admin");
-      qc.invalidateQueries({ queryKey: ["all-roles"] });
-    },
-    onError: (e: any) => toast.error(e.message ?? "Failed to promote"),
-  });
-
-  const demote = useMutation({
-    mutationFn: async (userId: string) => {
-      const { error } = await supabase
+  const setRole = useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: AppRole }) => {
+      const { error: delErr } = await supabase.from("user_roles").delete().eq("user_id", userId);
+      if (delErr) throw delErr;
+      const { error: insErr } = await supabase
         .from("user_roles")
-        .delete()
-        .eq("user_id", userId)
-        .eq("role", "admin");
-      if (error) throw error;
+        .insert({ user_id: userId, role: newRole });
+      if (insErr) throw insErr;
     },
     onSuccess: () => {
-      toast.success("Removed admin role");
+      toast.success("Role updated");
       qc.invalidateQueries({ queryKey: ["all-roles"] });
+      qc.invalidateQueries({ queryKey: ["employees-list"] });
+      qc.invalidateQueries({ queryKey: ["employees-map"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Failed to remove admin"),
+    onError: (e: any) => toast.error(e.message ?? "Failed to update role"),
   });
 
-  const isAdmin = (uid: string) =>
-    (roles ?? []).some((r) => r.user_id === uid && r.role === "admin");
+  const roleFor = (uid: string): AppRole => {
+    const list = (roles ?? []).filter((r) => r.user_id === uid).map((r) => r.role);
+    if (list.includes("admin")) return "admin";
+    if (list.includes("office")) return "office";
+    return "employee";
+  };
 
   return (
     <AppShell>
@@ -84,37 +79,45 @@ function UsersPage() {
         <h1 className="text-2xl font-semibold">Team & admins</h1>
       </div>
       <p className="text-sm text-muted-foreground mb-4">
-        Promote any team member to admin. They must have signed up at least once.
+        Assign a role to each team member. Only <strong>Admins</strong> and <strong>Field employees</strong> can be scheduled for jobs. <strong>Office</strong> staff are hidden from the job assignment list.
       </p>
       <div className="space-y-3">
         {profiles?.map((p) => {
-          const admin = isAdmin(p.id);
+          const current = roleFor(p.id);
           const isSelf = p.id === user?.id;
           return (
-            <Card key={p.id} className="p-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium truncate">{p.full_name || "Unnamed"}</p>
-                  {admin ? (
-                    <Badge className="gap-1"><ShieldCheck className="h-3 w-3" />Admin</Badge>
-                  ) : (
-                    <Badge variant="secondary" className="gap-1"><UserIcon className="h-3 w-3" />Employee</Badge>
-                  )}
-                </div>
+            <Card key={p.id} className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <p className="font-medium truncate flex-1">{p.full_name || "Unnamed"}</p>
+                {current === "admin" && (
+                  <Badge className="gap-1"><ShieldCheck className="h-3 w-3" />Admin</Badge>
+                )}
+                {current === "employee" && (
+                  <Badge variant="secondary" className="gap-1"><UserIcon className="h-3 w-3" />Field employee</Badge>
+                )}
+                {current === "office" && (
+                  <Badge variant="outline" className="gap-1"><Briefcase className="h-3 w-3" />Office</Badge>
+                )}
               </div>
-              {admin ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={isSelf || demote.isPending}
-                  onClick={() => demote.mutate(p.id)}
-                >
-                  {isSelf ? "You" : "Remove admin"}
-                </Button>
-              ) : (
-                <Button size="sm" disabled={promote.isPending} onClick={() => promote.mutate(p.id)}>
-                  Make admin
-                </Button>
+              <div className="grid grid-cols-3 gap-2">
+                {(["admin", "employee", "office"] as AppRole[]).map((r) => (
+                  <Button
+                    key={r}
+                    size="sm"
+                    variant={current === r ? "default" : "outline"}
+                    disabled={
+                      current === r ||
+                      setRole.isPending ||
+                      (isSelf && current === "admin" && r !== "admin")
+                    }
+                    onClick={() => setRole.mutate({ userId: p.id, newRole: r })}
+                  >
+                    {r === "admin" ? "Admin" : r === "employee" ? "Field" : "Office"}
+                  </Button>
+                ))}
+              </div>
+              {isSelf && current === "admin" && (
+                <p className="text-xs text-muted-foreground">You can't change your own admin role.</p>
               )}
             </Card>
           );
