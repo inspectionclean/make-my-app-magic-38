@@ -1,0 +1,1 @@
+ALTER TABLE public.intake_submissions ADD COLUMN IF NOT EXISTS emergency_contact_name text, ADD COLUMN IF NOT EXISTS emergency_contact_phone text;
