@@ -14,16 +14,226 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      job_notes: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          job_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          job_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_notes_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_photos: {
+        Row: {
+          id: string
+          job_id: string
+          storage_path: string
+          taken_at: string
+          type: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          id?: string
+          job_id: string
+          storage_path: string
+          taken_at?: string
+          type: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          id?: string
+          job_id?: string
+          storage_path?: string
+          taken_at?: string
+          type?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_photos_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          address: string
+          assigned_to: string | null
+          created_at: string
+          created_by: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          description: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          mgmt_email: string | null
+          report_sent_at: string | null
+          scheduled_at: string
+          status: Database["public"]["Enums"]["job_status"]
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          description?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          mgmt_email?: string | null
+          report_sent_at?: string | null
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["job_status"]
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          description?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          mgmt_email?: string | null
+          report_sent_at?: string | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["job_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      time_entries: {
+        Row: {
+          arrived_at: string
+          created_at: string
+          id: string
+          job_id: string
+          left_at: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          arrived_at?: string
+          created_at?: string
+          id?: string
+          job_id: string
+          left_at?: string | null
+          source?: string
+          user_id: string
+        }
+        Update: {
+          arrived_at?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+          left_at?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "employee"
+      job_status: "scheduled" | "in_progress" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +360,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "employee"],
+      job_status: ["scheduled", "in_progress", "completed", "cancelled"],
+    },
   },
 } as const
