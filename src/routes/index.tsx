@@ -5,7 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, ChevronRight, CalendarDays } from "lucide-react";
+import { MapPin, Clock, ChevronRight, CalendarDays, Settings, ClipboardList, FileCheck2 } from "lucide-react";
 import { format, isToday, isTomorrow, isPast } from "date-fns";
 
 export const Route = createFileRoute("/")({ component: SchedulePage });
@@ -30,6 +30,31 @@ function SchedulePage() {
       <div className="space-y-1 mb-5">
         <p className="text-sm text-muted-foreground">{format(new Date(), "EEEE, MMM d")}</p>
         <h1 className="text-2xl font-semibold tracking-tight">My schedule</h1>
+      </div>
+      <div className="grid grid-cols-2 gap-2 mb-5">
+        {role === "admin" && (
+          <Link to="/admin">
+            <Card className="p-3 hover:shadow-md transition cursor-pointer h-full">
+              <Settings className="h-5 w-5 text-primary mb-1" />
+              <p className="font-medium text-sm">Admin</p>
+              <p className="text-xs text-muted-foreground">Manage jobs</p>
+            </Card>
+          </Link>
+        )}
+        <Link to="/performance-report">
+          <Card className="p-3 hover:shadow-md transition cursor-pointer h-full">
+            <FileCheck2 className="h-5 w-5 text-primary mb-1" />
+            <p className="font-medium text-sm">Performance Report</p>
+            <p className="text-xs text-muted-foreground">Submit hood cleaning report</p>
+          </Card>
+        </Link>
+        <Link to="/intake">
+          <Card className="p-3 hover:shadow-md transition cursor-pointer h-full">
+            <ClipboardList className="h-5 w-5 text-primary mb-1" />
+            <p className="font-medium text-sm">Intake Form</p>
+            <p className="text-xs text-muted-foreground">New customer (public)</p>
+          </Card>
+        </Link>
       </div>
       {isLoading ? (
         <p className="text-muted-foreground text-sm">Loading…</p>
