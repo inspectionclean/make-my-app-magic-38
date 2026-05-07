@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { sendLovableEmail } from "@lovable.dev/email-js";
 
 export const Route = createFileRoute("/api/send-report")({
   server: {
@@ -59,23 +60,22 @@ export const Route = createFileRoute("/api/send-report")({
           ),
         );
 
-        // Try Lovable email API; fall back gracefully
         try {
           const apiKey = process.env.LOVABLE_API_KEY;
-          if (!apiKey) throw new Error("Email not configured yet");
-          const res = await fetch("https://api.lovable.dev/v1/email/send", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-            body: JSON.stringify({
-              to: recipients,
-              from: "service@notify.inspectionclean.com",
+          if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
+          for (const to of recipients) {
+            await sendLovableEmail({
+              apiKey,
+              senderDomain: "notify.inspectionclean.com",
+              from: "Inspection Clean <service@notify.inspectionclean.com>",
+              to,
               subject: `Service report — ${job.customer_name}`,
               html,
-            }),
-          });
-          if (!res.ok) throw new Error(await res.text());
+            });
+          }
+          await supabaseAdmin.from("jobs").update({ report_sent_at: new Date().toISOString() }).eq("id", jobId);
         } catch (e: any) {
-          return new Response(`Email infrastructure not set up yet. Please configure your email domain in Cloud → Emails. (${e.message})`, { status: 500 });
+          return new Response(`Failed to send report: ${e.message}`, { status: 500 });
         }
 
         return Response.json({ ok: true });
