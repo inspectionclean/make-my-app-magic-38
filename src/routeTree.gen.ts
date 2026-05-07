@@ -16,6 +16,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsIdRouteImport } from './routes/jobs.$id'
 import { Route as ApiSendReportRouteImport } from './routes/api/send-report'
+import { Route as AdminNewRouteImport } from './routes/admin.new'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 
 const PerformanceReportRoute = PerformanceReportRouteImport.update({
@@ -53,6 +54,11 @@ const ApiSendReportRoute = ApiSendReportRouteImport.update({
   path: '/api/send-report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminNewRoute = AdminNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AdminRoute,
+} as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -62,20 +68,22 @@ const LovableEmailQueueProcessRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/intake': typeof IntakeRoute
   '/login': typeof LoginRoute
   '/performance-report': typeof PerformanceReportRoute
+  '/admin/new': typeof AdminNewRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/jobs/$id': typeof JobsIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/intake': typeof IntakeRoute
   '/login': typeof LoginRoute
   '/performance-report': typeof PerformanceReportRoute
+  '/admin/new': typeof AdminNewRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/jobs/$id': typeof JobsIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -83,10 +91,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/intake': typeof IntakeRoute
   '/login': typeof LoginRoute
   '/performance-report': typeof PerformanceReportRoute
+  '/admin/new': typeof AdminNewRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/jobs/$id': typeof JobsIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/login'
     | '/performance-report'
+    | '/admin/new'
     | '/api/send-report'
     | '/jobs/$id'
     | '/lovable/email/queue/process'
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/login'
     | '/performance-report'
+    | '/admin/new'
     | '/api/send-report'
     | '/jobs/$id'
     | '/lovable/email/queue/process'
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/login'
     | '/performance-report'
+    | '/admin/new'
     | '/api/send-report'
     | '/jobs/$id'
     | '/lovable/email/queue/process'
@@ -126,7 +138,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   IntakeRoute: typeof IntakeRoute
   LoginRoute: typeof LoginRoute
   PerformanceReportRoute: typeof PerformanceReportRoute
@@ -186,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSendReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/new': {
+      id: '/admin/new'
+      path: '/new'
+      fullPath: '/admin/new'
+      preLoaderRoute: typeof AdminNewRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -196,9 +215,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminNewRoute: typeof AdminNewRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminNewRoute: AdminNewRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   IntakeRoute: IntakeRoute,
   LoginRoute: LoginRoute,
   PerformanceReportRoute: PerformanceReportRoute,
