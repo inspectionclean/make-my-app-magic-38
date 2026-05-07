@@ -38,9 +38,16 @@ function NewJobPage() {
     queryKey: ["employees-list"],
     enabled: role === "admin",
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id, full_name");
-      if (error) throw error;
-      return data ?? [];
+      const [{ data: profiles, error: pErr }, { data: roleRows, error: rErr }] = await Promise.all([
+        supabase.from("profiles").select("id, full_name"),
+        supabase.from("user_roles").select("user_id, role"),
+      ]);
+      if (pErr) throw pErr;
+      if (rErr) throw rErr;
+      const employeeIds = new Set(
+        (roleRows ?? []).filter((r) => r.role === "employee").map((r) => r.user_id),
+      );
+      return (profiles ?? []).filter((p) => employeeIds.has(p.id));
     },
   });
 
