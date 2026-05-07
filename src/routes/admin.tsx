@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -15,6 +15,7 @@ export const Route = createFileRoute("/admin")({ component: AdminHome });
 function AdminHome() {
   const { role, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!loading && role && role !== "admin") navigate({ to: "/" });
@@ -43,6 +44,10 @@ function AdminHome() {
       return map;
     },
   });
+
+  if (location.pathname !== "/admin") {
+    return <Outlet />;
+  }
 
   return (
     <AppShell>
