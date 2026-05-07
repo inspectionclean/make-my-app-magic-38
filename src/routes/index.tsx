@@ -5,7 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, ChevronRight, CalendarDays, Settings, ClipboardList, FileCheck2 } from "lucide-react";
+import { MapPin, Clock, ChevronRight, CalendarDays, Settings, ClipboardList, FileCheck2, Users } from "lucide-react";
 import { format, isToday, isTomorrow, isPast } from "date-fns";
 
 export const Route = createFileRoute("/")({ component: SchedulePage });
@@ -38,6 +38,15 @@ function SchedulePage() {
               <Settings className="h-5 w-5 text-primary mb-1" />
               <p className="font-medium text-sm">Admin</p>
               <p className="text-xs text-muted-foreground">Manage jobs</p>
+            </Card>
+          </Link>
+        )}
+        {role === "admin" && (
+          <Link to="/admin/users">
+            <Card className="p-3 hover:shadow-md transition cursor-pointer h-full">
+              <Users className="h-5 w-5 text-primary mb-1" />
+              <p className="font-medium text-sm">Team</p>
+              <p className="text-xs text-muted-foreground">Manage admins</p>
             </Card>
           </Link>
         )}
