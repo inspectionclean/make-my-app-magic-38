@@ -81,7 +81,9 @@ function NewJobPage() {
   return (
     <AppShell>
       <div className="flex items-center gap-2 mb-4">
-        <Link to="/admin"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
+        <Button asChild variant="ghost" size="icon">
+          <Link to="/admin"><ArrowLeft className="h-4 w-4" /></Link>
+        </Button>
         <h1 className="text-2xl font-semibold">New job</h1>
       </div>
       <Card className="p-4">
