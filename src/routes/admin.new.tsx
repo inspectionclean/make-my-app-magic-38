@@ -28,6 +28,7 @@ function NewJobPage() {
     scheduled_at: "",
     assigned_to: "",
     mgmt_email: "",
+    service_type: "",
   });
 
   useEffect(() => {
@@ -72,6 +73,7 @@ function NewJobPage() {
         scheduled_at: new Date(form.scheduled_at).toISOString(),
         assigned_to: form.assigned_to || null,
         mgmt_email: form.mgmt_email || null,
+        service_type: form.service_type || null,
         created_by: user?.id,
       })
       .select("id")
@@ -116,6 +118,18 @@ function NewJobPage() {
           <div className="space-y-1.5">
             <Label htmlFor="scheduled_at">Scheduled time *</Label>
             <Input id="scheduled_at" type="datetime-local" value={form.scheduled_at} onChange={update("scheduled_at")} required />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Service type</Label>
+            <Select value={form.service_type} onValueChange={(v) => setForm((f) => ({ ...f, service_type: v }))}>
+              <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Hood Clean">Hood Clean</SelectItem>
+                <SelectItem value="Repair">Repair</SelectItem>
+                <SelectItem value="Call Back">Call Back</SelectItem>
+                <SelectItem value="Estimate">Estimate</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1.5">
             <Label>Assign to</Label>
