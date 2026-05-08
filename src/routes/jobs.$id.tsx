@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Navigation, Phone, Mail, Send, User } from "lucide-react";
+import { ArrowLeft, MapPin, Navigation, Phone, Mail, Send, User, ClipboardCheck } from "lucide-react";
 import { format } from "date-fns";
 import { JobPhotos } from "@/components/JobPhotos";
 import { TimeTracker } from "@/components/TimeTracker";
@@ -27,13 +27,14 @@ function JobDetail() {
     queryKey: ["job", id],
     enabled: !!user,
     queryFn: async () => {
-      const [{ data: job }, { data: photos }, { data: notes }, { data: times }] = await Promise.all([
+      const [{ data: job }, { data: photos }, { data: notes }, { data: times }, { data: reports }] = await Promise.all([
         supabase.from("jobs").select("*").eq("id", id).maybeSingle(),
         supabase.from("job_photos").select("*").eq("job_id", id).order("taken_at"),
         supabase.from("job_notes").select("*").eq("job_id", id).order("created_at"),
         supabase.from("time_entries").select("*").eq("job_id", id).order("arrived_at"),
+        supabase.from("performance_reports").select("id").eq("job_id", id).limit(1),
       ]);
-      return { job, photos: photos ?? [], notes: notes ?? [], times: times ?? [] };
+      return { job, photos: photos ?? [], notes: notes ?? [], times: times ?? [], hasReport: (reports ?? []).length > 0 };
     },
   });
 
@@ -137,10 +138,25 @@ function JobDetail() {
         {j.status !== "completed" && (
           <div className="grid grid-cols-2 gap-2 mt-2">
             {j.status === "scheduled" && (
-              <Button variant="outline" onClick={() => setStatus("in_progress")}>Start job</Button>
+              <Button variant="outline" className="col-span-2" onClick={() => setStatus("in_progress")}>Start job</Button>
             )}
             {j.status === "in_progress" && (
-              <Button variant="outline" onClick={() => setStatus("completed")}>Mark complete</Button>
+              <>
+                <Button asChild variant="outline">
+                  <Link to="/performance-report" search={{ jobId: j.id }}>
+                    <ClipboardCheck className="h-4 w-4 mr-1" />
+                    {data.hasReport ? "Report submitted" : "Performance report"}
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setStatus("completed")}
+                  disabled={!data.hasReport}
+                  title={!data.hasReport ? "Submit performance report first" : undefined}
+                >
+                  Mark complete
+                </Button>
+              </>
             )}
           </div>
         )}
