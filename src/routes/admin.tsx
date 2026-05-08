@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MapPin, Users, CalendarDown } from "lucide-react";
+import { Plus, MapPin, Users, CalendarArrowDown } from "lucide-react";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -80,7 +80,7 @@ function AdminHome() {
         <h1 className="text-2xl font-semibold">All jobs</h1>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={importFromCalendar} disabled={importing}>
-            <CalendarDown className="h-4 w-4 mr-1" />
+            <CalendarArrowDown className="h-4 w-4 mr-1" />
             {importing ? "Importing…" : "Import"}
           </Button>
           <Button asChild size="sm" variant="outline">
