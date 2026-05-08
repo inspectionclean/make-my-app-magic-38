@@ -25,10 +25,20 @@ async function gcalFetch(path: string, init: RequestInit = {}) {
   return text ? JSON.parse(text) : {};
 }
 
+function formatSmsPhone(raw?: string | null): string | null {
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return null;
+  const e164 = digits.length === 10 ? `+1${digits}` : digits.length === 11 && digits.startsWith("1") ? `+${digits}` : `+${digits}`;
+  return `#${e164}#`;
+}
+
 function buildEvent(job: any) {
   const start = new Date(job.scheduled_at);
   const end = new Date(start.getTime() + 60 * 60 * 1000); // 1 hour
+  const smsTag = formatSmsPhone(job.customer_phone);
   const descLines = [
+    smsTag,
     job.service_type ? `Type: ${job.service_type}` : null,
     job.customer_phone ? `Phone: ${job.customer_phone}` : null,
     job.customer_email ? `Email: ${job.customer_email}` : null,
