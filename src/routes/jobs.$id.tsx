@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Navigation, Phone, Mail, Send, User, ClipboardCheck, MapPinned } from "lucide-react";
+import { ArrowLeft, MapPin, Navigation, Phone, Mail, Send, User, ClipboardCheck, MapPinned, FileText, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { JobPhotos } from "@/components/JobPhotos";
 import { TimeTracker } from "@/components/TimeTracker";
@@ -46,14 +46,49 @@ function JobDetail() {
     },
   });
 
+  const customerName = data?.job?.customer_name;
+  const driveFiles = useQuery({
+    queryKey: ["drive-files", id, customerName],
+    enabled: !!user && !!customerName,
+    queryFn: async () => {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      const res = await fetch(
+        `/api/drive-customer-files?customer=${encodeURIComponent(customerName!)}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+      );
+      if (!res.ok) return { files: [] as any[] };
+      return (await res.json()) as { files: Array<{ id: string; name: string; mimeType: string; modifiedTime?: string; webViewLink?: string; text?: string }> };
+    },
+  });
+
   const addNote = useMutation({
     mutationFn: async (body: string) => {
       const { error } = await supabase.from("job_notes").insert({ job_id: id, body, author_id: user!.id });
       if (error) throw error;
+      // Mirror to Drive (fire and forget)
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        const customer = data?.job?.customer_name;
+        if (customer && token) {
+          void fetch("/api/drive-upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              kind: "note",
+              customerName: customer,
+              data: { body, job_id: id, author_id: user!.id, created_at: new Date().toISOString() },
+              baseName: `note-${new Date().toISOString().replace(/[:.]/g, "-")}`,
+            }),
+          }).catch(() => {});
+        }
+      } catch {}
     },
     onSuccess: () => {
       setNoteText("");
       qc.invalidateQueries({ queryKey: ["job", id] });
+      qc.invalidateQueries({ queryKey: ["drive-files", id] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -255,6 +290,42 @@ function JobDetail() {
         >
           Add note
         </Button>
+      </div>
+
+      <div className="mt-5">
+        <h2 className="font-semibold mb-2">Previous notes &amp; files</h2>
+        <Card className="p-3 space-y-2">
+          {driveFiles.isLoading && <p className="text-sm text-muted-foreground">Loading from customer file…</p>}
+          {!driveFiles.isLoading && (driveFiles.data?.files?.length ?? 0) === 0 && (
+            <p className="text-sm text-muted-foreground">No previous files found for this customer.</p>
+          )}
+          {driveFiles.data?.files?.map((f) => (
+            <div key={f.id} className="text-sm border-b last:border-0 pb-2 last:pb-0">
+              {f.text ? (
+                <>
+                  <p className="whitespace-pre-wrap">{f.text}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {f.name} · {f.modifiedTime ? format(new Date(f.modifiedTime), "MMM d, yyyy h:mm a") : ""}
+                  </p>
+                </>
+              ) : (
+                <a
+                  href={f.webViewLink ?? "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 text-primary hover:underline"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span className="flex-1 truncate">{f.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {f.modifiedTime ? format(new Date(f.modifiedTime), "MMM d, yyyy") : ""}
+                  </span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+            </div>
+          ))}
+        </Card>
       </div>
 
       <div className="mt-5">

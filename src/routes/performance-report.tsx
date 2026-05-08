@@ -264,6 +264,23 @@ function PerformanceReportPage() {
     if (jobId) {
       await supabase.from("jobs").update({ status: "completed" }).eq("id", jobId);
     }
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      void fetch("/api/drive-upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          kind: "report",
+          customerName: parsed.data.business_name,
+          data: { ...parsed.data, service_date: raw.service_date },
+          baseName: `report-${raw.service_date || new Date().toISOString().slice(0, 10)}`,
+        }),
+      }).catch(() => {});
+    } catch {}
     setSubmitted(true);
     toast.success(jobId ? "Performance report submitted. Job marked complete." : "Performance report submitted.");
     if (jobId) {
