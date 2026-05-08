@@ -372,6 +372,7 @@ export type Database = {
           grease_level: string | null
           hoods: number | null
           id: string
+          job_id: string | null
           other_cleaned: string | null
           phone: string
           photos: string[] | null
@@ -415,6 +416,7 @@ export type Database = {
           grease_level?: string | null
           hoods?: number | null
           id?: string
+          job_id?: string | null
           other_cleaned?: string | null
           phone: string
           photos?: string[] | null
@@ -458,6 +460,7 @@ export type Database = {
           grease_level?: string | null
           hoods?: number | null
           id?: string
+          job_id?: string | null
           other_cleaned?: string | null
           phone?: string
           photos?: string[] | null
