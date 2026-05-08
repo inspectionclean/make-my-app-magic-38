@@ -27,16 +27,39 @@ function monthLabel(d: Date): string {
 export const Route = createFileRoute("/api/public/hooks/monthly-due-email")({
   server: {
     handlers: {
+      GET: async ({ request }) => {
+        // Sample/test mode: GET ?month=5&year=2026&to=someone@example.com
+        const url = new URL(request.url);
+        const monthParam = parseInt(url.searchParams.get("month") || "", 10);
+        const yearParam = parseInt(url.searchParams.get("year") || "", 10);
+        const toParam = url.searchParams.get("to") || "";
+        if (!monthParam || !yearParam || !toParam) {
+          return Response.json({ error: "Provide month, year, to" }, { status: 400 });
+        }
+        const target = new Date(Date.UTC(yearParam, monthParam - 1, 1));
+        return await runAndEnqueue(target, toParam);
+      },
       POST: async () => {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
         if (!supabaseUrl || !supabaseServiceKey) {
           return Response.json({ error: "Server not configured" }, { status: 500 });
         }
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
         const target = nextMonthDate();
-        const label = monthLabel(target);
+        return await runAndEnqueue(target, null);
+      },
+    },
+  },
+});
+
+async function runAndEnqueue(target: Date, recipientOverride: string | null) {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return Response.json({ error: "Server not configured" }, { status: 500 });
+  }
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const label = monthLabel(target);
 
         // 1. Pull the list of customer folders due next month from Drive
         let customersFromDrive: { name: string }[] = [];
@@ -106,9 +129,11 @@ export const Route = createFileRoute("/api/public/hooks/monthly-due-email")({
         const text = await render(element, { plainText: true });
         const subject = typeof tpl.subject === "function" ? tpl.subject(data) : tpl.subject;
 
-        const recipient = tpl.to!;
+        const recipient = recipientOverride || tpl.to!;
         const messageId = crypto.randomUUID();
-        const idempotencyKey = `monthly-due-${target.getUTCFullYear()}-${target.getUTCMonth() + 1}`;
+        const idempotencyKey = recipientOverride
+          ? `monthly-due-sample-${target.getUTCFullYear()}-${target.getUTCMonth() + 1}-${recipient}-${messageId}`
+          : `monthly-due-${target.getUTCFullYear()}-${target.getUTCMonth() + 1}`;
 
         // 4. Get/create unsubscribe token (required by send pipeline)
         let unsubscribeToken: string | null = null;
@@ -164,7 +189,4 @@ export const Route = createFileRoute("/api/public/hooks/monthly-due-email")({
         }
 
         return Response.json({ success: true, month: label, count: customers.length });
-      },
-    },
-  },
-});
+}
