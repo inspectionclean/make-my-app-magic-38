@@ -200,6 +200,102 @@ export async function moveFile(fileId: string, addParentId: string, removeParent
   );
 }
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+function cadenceMonths(serviceType?: string | null): number | null {
+  const s = (serviceType ?? "").toLowerCase().trim();
+  if (!s) return null;
+  if (s.includes("month")) return 1;
+  if (s.includes("quarter")) return 3;
+  if (s.includes("semi") || s.includes("bi-annual") || s.includes("biannual") || s.includes("6 month")) return 6;
+  if (s.includes("annual") || s.includes("year")) return 12;
+  return null;
+}
+
+function monthFolderName(d: Date): string {
+  const m = d.getUTCMonth();
+  const yy = String(d.getUTCFullYear()).slice(-2);
+  return `${m + 1}- ${MONTH_NAMES[m]} ${yy}`;
+}
+
+function parseMonthFolder(name: string): { month: number; year: number } | null {
+  // Matches "5- May 26" or "12- December 26"
+  const m = name.match(/^(\d{1,2})-\s*([A-Za-z]+)\s+(\d{2,4})$/);
+  if (!m) return null;
+  const month = parseInt(m[1], 10);
+  let year = parseInt(m[3], 10);
+  if (year < 100) year += 2000;
+  if (month < 1 || month > 12) return null;
+  return { month, year };
+}
+
+async function getOrCreateMonthFolder(target: Date): Promise<string> {
+  const active = await findActiveCustomersFolder();
+  if (!active) throw new Error(`"${ACTIVE_CUSTOMERS_FOLDER}" folder not found`);
+  const desiredName = monthFolderName(target);
+  const months = await listChildFolders(active);
+  const exact = months.find((f) => f.name.trim().toLowerCase() === desiredName.toLowerCase());
+  if (exact) return exact.id;
+  // Try to match by parsed month/year so slight name variants still resolve
+  for (const f of months) {
+    const p = parseMonthFolder(f.name.trim());
+    if (p && p.month === target.getUTCMonth() + 1 && p.year === target.getUTCFullYear()) {
+      return f.id;
+    }
+  }
+  return createFolder(desiredName, active);
+}
+
+/**
+ * Move a customer folder to the next due month based on the service cadence.
+ * Returns info about the move, or null if it was skipped (no cadence, no parent month).
+ */
+export async function scheduleNextDueMonth(opts: {
+  customerName: string;
+  serviceType?: string | null;
+  serviceDate?: string | null; // YYYY-MM-DD
+}): Promise<{ folderId: string; from: string; to: string; toFolderId: string } | null> {
+  const months = cadenceMonths(opts.serviceType);
+  if (!months) return null;
+
+  const folderId = await findCustomerFolderUnderActive(opts.customerName);
+  if (!folderId) return null;
+
+  // Look up the folder's current parent (a month folder under Active Customers)
+  const meta = await gfetch(`/drive/v3/files/${folderId}?fields=parents,name`);
+  const metaJson = (await meta.json()) as { parents?: string[]; name: string };
+  const active = await findActiveCustomersFolder();
+  if (!active) return null;
+  const monthFolders = await listChildFolders(active);
+  const monthIds = new Set(monthFolders.map((f) => f.id));
+  const currentParentId = metaJson.parents?.find((p) => monthIds.has(p));
+  if (!currentParentId) return null;
+  const currentParent = monthFolders.find((f) => f.id === currentParentId)!;
+
+  // Compute target month from service_date if provided, else current parent month, else today
+  let base: Date;
+  if (opts.serviceDate) {
+    base = new Date(`${opts.serviceDate}T00:00:00Z`);
+  } else {
+    const parsed = parseMonthFolder(currentParent.name.trim());
+    base = parsed
+      ? new Date(Date.UTC(parsed.year, parsed.month - 1, 1))
+      : new Date();
+  }
+  const target = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + months, 1));
+
+  const toFolderId = await getOrCreateMonthFolder(target);
+  if (toFolderId === currentParentId) {
+    return { folderId, from: currentParent.name, to: currentParent.name, toFolderId };
+  }
+
+  await moveFile(folderId, toFolderId, currentParentId);
+  return { folderId, from: currentParent.name, to: monthFolderName(target), toFolderId };
+}
+
 function stripExt(name: string): string {
   const i = name.lastIndexOf(".");
   if (i <= 0) return name;

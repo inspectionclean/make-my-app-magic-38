@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getOrCreateCustomerFolder, uploadFile } from "@/lib/drive.server";
+import { getOrCreateCustomerFolder, scheduleNextDueMonth, uploadFile } from "@/lib/drive.server";
 import { buildSimplePdf, type PdfSection } from "@/lib/pdf.server";
 
 export const Route = createFileRoute("/api/drive-upload")({
@@ -65,7 +65,20 @@ export const Route = createFileRoute("/api/drive-upload")({
               content: String(body.data.body),
             });
           }
-          return Response.json({ ok: true });
+          // After a report is filed, advance the customer's folder to the next due month
+          let scheduled: Awaited<ReturnType<typeof scheduleNextDueMonth>> = null;
+          if (body.kind === "report") {
+            try {
+              scheduled = await scheduleNextDueMonth({
+                customerName: body.customerName,
+                serviceType: (body.data.service_type as string) ?? null,
+                serviceDate: (body.data.service_date as string) ?? null,
+              });
+            } catch (e) {
+              console.error("scheduleNextDueMonth failed", e);
+            }
+          }
+          return Response.json({ ok: true, scheduled });
         } catch (e: any) {
           return new Response(`Drive upload failed: ${e.message}`, { status: 500 });
         }
