@@ -84,6 +84,21 @@ function NewJobPage() {
       return;
     }
     toast.success("Job created");
+    // Sync to Google Calendar (best-effort)
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const res = await fetch("/api/sync-calendar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sess.session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({ jobId: data!.id, action: "upsert" }),
+      });
+      if (!res.ok) toast.warning("Job saved, but calendar sync failed");
+    } catch {
+      toast.warning("Job saved, but calendar sync failed");
+    }
     navigate({ to: "/jobs/$id", params: { id: data!.id } });
   };
 
