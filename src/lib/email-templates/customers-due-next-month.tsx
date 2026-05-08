@@ -18,7 +18,7 @@ interface Props {
 const CustomersDueNextMonthEmail = ({ monthLabel = "next month", customers = [] }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>{customers.length} customer(s) due in {monthLabel}</Preview>
+      <Preview>{`${customers.length} customer(s) due in ${monthLabel}`}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>Customers due in {monthLabel}</Heading>
