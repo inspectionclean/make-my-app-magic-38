@@ -16,41 +16,43 @@ export const Route = createFileRoute("/api/send-report")({
         const { data: job } = await supabaseAdmin.from("jobs").select("*").eq("id", jobId).maybeSingle();
         if (!job) return new Response("Job not found", { status: 404 });
 
-        const [{ data: photos }, { data: notes }, { data: times }] = await Promise.all([
-          supabaseAdmin.from("job_photos").select("*").eq("job_id", jobId),
-          supabaseAdmin.from("job_notes").select("*").eq("job_id", jobId).order("created_at"),
-          supabaseAdmin.from("time_entries").select("*").eq("job_id", jobId),
-        ]);
-
-        const totalMin = (times ?? []).reduce((acc, e) => {
-          const s = new Date(e.arrived_at).getTime();
-          const en = e.left_at ? new Date(e.left_at).getTime() : s;
-          return acc + Math.max(0, Math.floor((en - s) / 60000));
-        }, 0);
-        const h = Math.floor(totalMin / 60);
-        const m = totalMin % 60;
-
-        // Generate signed URLs for photos
-        const photoLinks: { type: string; url: string }[] = [];
-        for (const p of photos ?? []) {
-          const { data } = await supabaseAdmin.storage.from("job-photos").createSignedUrl(p.storage_path, 60 * 60 * 24 * 7);
-          if (data?.signedUrl) photoLinks.push({ type: p.type, url: data.signedUrl });
+        const { data: report } = await supabaseAdmin
+          .from("performance_reports")
+          .select("*")
+          .eq("job_id", jobId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!report) {
+          return new Response("No performance report submitted for this job", { status: 400 });
         }
-        const before = photoLinks.filter((p) => p.type === "before");
-        const after = photoLinks.filter((p) => p.type === "after");
+
+        const row = (label: string, value: unknown) => {
+          if (value == null || value === "" || (Array.isArray(value) && value.length === 0)) return "";
+          const v = Array.isArray(value) ? value.join(", ") : typeof value === "boolean" ? (value ? "Yes" : "No") : String(value);
+          return `<tr><td style="padding:6px 10px;background:#f6f6f6;font-weight:600;width:45%">${escapeHtml(label)}</td><td style="padding:6px 10px">${escapeHtml(v)}</td></tr>`;
+        };
+        const section = (title: string, rows: string) =>
+          rows ? `<h3 style="margin:18px 0 6px">${escapeHtml(title)}</h3><table style="width:100%;border-collapse:collapse;font-size:14px">${rows}</table>` : "";
 
         const html = `
-          <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222">
-            <h1 style="font-size:22px;margin:0 0 8px">Service report — ${escapeHtml(job.customer_name)}</h1>
-            <p style="color:#666;margin:0 0 20px">${new Date(job.scheduled_at).toLocaleString()}</p>
-            <h3 style="margin:16px 0 4px">Location</h3>
-            <p style="margin:0">${escapeHtml(job.address)}</p>
-            <h3 style="margin:16px 0 4px">Time on site</h3>
-            <p style="margin:0">${h > 0 ? `${h}h ` : ""}${m}m</p>
-            ${job.description ? `<h3 style="margin:16px 0 4px">Scope</h3><p style="margin:0">${escapeHtml(job.description)}</p>` : ""}
-            ${notes && notes.length ? `<h3 style="margin:16px 0 4px">Notes</h3>${notes.map((n) => `<p style="margin:0 0 8px;white-space:pre-wrap">${escapeHtml(n.body)}</p>`).join("")}` : ""}
-            ${before.length ? `<h3 style="margin:16px 0 4px">Before</h3>${before.map((p) => `<a href="${p.url}"><img src="${p.url}" style="max-width:280px;margin:4px;border-radius:6px"/></a>`).join("")}` : ""}
-            ${after.length ? `<h3 style="margin:16px 0 4px">After</h3>${after.map((p) => `<a href="${p.url}"><img src="${p.url}" style="max-width:280px;margin:4px;border-radius:6px"/></a>`).join("")}` : ""}
+          <div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;padding:20px;color:#222">
+            <h1 style="font-size:22px;margin:0 0 4px">Hood Cleaning Performance Report</h1>
+            <p style="color:#666;margin:0 0 16px">${escapeHtml(report.business_name)} — ${escapeHtml(report.service_date)}</p>
+
+            ${section("Customer", row("Business", report.business_name) + row("Address", `${report.address}, ${report.city}, ${report.state} ${report.zip}`) + row("Contact", report.contact_name) + row("Phone", report.phone) + row("Email", report.email))}
+
+            ${section("Service", row("Service date", report.service_date) + row("Arrival", report.arrival_time) + row("Completion", report.completion_time) + row("Technicians", report.technicians) + row("Previous cleaning", report.previous_cleaning_date) + row("Service type", report.service_type))}
+
+            ${section("System", row("Hoods", report.hoods) + row("Exhaust fans", report.fans) + row("Duct runs", report.duct_runs) + row("Fire suppression", report.fire_suppression) + row("Access panels", report.access_panels) + row("Roof access", report.roof_access))}
+
+            ${section("Areas cleaned", row("Areas", report.areas_cleaned) + row("Other", report.other_cleaned))}
+
+            ${section("Performance results", row("Condition before", report.condition_before) + row("Condition after", report.condition_after) + row("Grease level", report.grease_level) + row("Airflow check", report.airflow_check) + row("Fan check", report.fan_check) + row("Filter condition", report.filter_condition) + row("Access panel condition", report.access_panel_condition))}
+
+            ${section("Findings & recommendations", row("Findings", report.findings) + row("Recommendations", report.recommendations) + row("Recommended items", report.recommendation_items) + row("Photos taken", report.photos))}
+
+            ${section("Sign-off", row("Technician", report.technician_name) + row("Technician signature", report.technician_signature) + row("Customer rep", report.customer_rep) + row("Customer signature", report.customer_signature) + row("Signed", report.signature_date))}
           </div>`;
 
         const ALWAYS_CC = "service@inspectionclean.com";
@@ -69,7 +71,7 @@ export const Route = createFileRoute("/api/send-report")({
                 from: "Inspection Clean <service@notify.inspectionclean.com>",
                 sender_domain: "notify.inspectionclean.com",
                 to,
-                subject: `Service report — ${job.customer_name}`,
+              subject: `Performance report — ${job.customer_name}`,
                 html,
                 text: `Service report for ${job.customer_name} on ${new Date(job.scheduled_at).toLocaleString()}.`,
                 label: "service-report",
