@@ -1,4 +1,5 @@
 import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from "pdf-lib";
+import { LOGO_PNG_BASE64 } from "./logo-data";
 
 export type PdfSection = {
   heading: string;
@@ -16,6 +17,15 @@ export async function buildSimplePdf(opts: {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+  // Embed logo (decoded once, reused on every page header)
+  const logoBytes = Uint8Array.from(atob(LOGO_PNG_BASE64), (c) => c.charCodeAt(0));
+  const logo = await doc.embedPng(logoBytes);
+  const logoMaxH = 56;
+  const logoMaxW = 150;
+  const logoScale = Math.min(logoMaxH / logo.height, logoMaxW / logo.width);
+  const logoW = logo.width * logoScale;
+  const logoH = logo.height * logoScale;
 
   const pageW = 612;
   const pageH = 792;
@@ -70,6 +80,26 @@ export async function buildSimplePdf(opts: {
     if (opts.subtitle) {
       page.drawText(sanitize(opts.subtitle), { x: margin, y: pageH - 72, size: 11, font, color: rgb(0.86, 0.91, 0.97) });
     }
+    // Logo in top-right corner, on a light pad so it stays legible against the brand bar
+    const padX = 8;
+    const padY = 6;
+    const padW = logoW + padX * 2;
+    const padH = logoH + padY * 2;
+    const padXPos = pageW - margin - padW + padX; // align pad's right edge with right margin
+    const padYPos = pageH - 18 - padH;
+    page.drawRectangle({
+      x: padXPos - padX,
+      y: padYPos - padY,
+      width: padW,
+      height: padH,
+      color: rgb(1, 1, 1),
+    });
+    page.drawImage(logo, {
+      x: pageW - margin - logoW,
+      y: pageH - 18 - logoH,
+      width: logoW,
+      height: logoH,
+    });
     // Accent stripe
     page.drawRectangle({ x: 0, y: pageH - 96, width: pageW, height: 4, color: rgb(0.96, 0.66, 0.18) });
     y = pageH - 120;
