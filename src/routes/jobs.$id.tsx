@@ -293,6 +293,42 @@ function JobDetail() {
       </div>
 
       <div className="mt-5">
+        <h2 className="font-semibold mb-2">Previous notes &amp; files</h2>
+        <Card className="p-3 space-y-2">
+          {driveFiles.isLoading && <p className="text-sm text-muted-foreground">Loading from customer file…</p>}
+          {!driveFiles.isLoading && (driveFiles.data?.files?.length ?? 0) === 0 && (
+            <p className="text-sm text-muted-foreground">No previous files found for this customer.</p>
+          )}
+          {driveFiles.data?.files?.map((f) => (
+            <div key={f.id} className="text-sm border-b last:border-0 pb-2 last:pb-0">
+              {f.text ? (
+                <>
+                  <p className="whitespace-pre-wrap">{f.text}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {f.name} · {f.modifiedTime ? format(new Date(f.modifiedTime), "MMM d, yyyy h:mm a") : ""}
+                  </p>
+                </>
+              ) : (
+                <a
+                  href={f.webViewLink ?? "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 text-primary hover:underline"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span className="flex-1 truncate">{f.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {f.modifiedTime ? format(new Date(f.modifiedTime), "MMM d, yyyy") : ""}
+                  </span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      <div className="mt-5">
         <Button className="w-full" size="lg" onClick={sendReport} disabled={sending}>
           <Send className="h-4 w-4 mr-2" />
           {sending ? "Sending…" : j.report_sent_at ? "Resend report" : "Send report"}
