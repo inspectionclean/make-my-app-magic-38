@@ -15,6 +15,7 @@ import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsIdRouteImport } from './routes/jobs.$id'
+import { Route as ApiSyncCalendarRouteImport } from './routes/api/sync-calendar'
 import { Route as ApiSendReportRouteImport } from './routes/api/send-report'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminNewRouteImport } from './routes/admin.new'
@@ -50,6 +51,11 @@ const JobsIdRoute = JobsIdRouteImport.update({
   path: '/jobs/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSyncCalendarRoute = ApiSyncCalendarRouteImport.update({
+  id: '/api/sync-calendar',
+  path: '/api/sync-calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSendReportRoute = ApiSendReportRouteImport.update({
   id: '/api/send-report',
   path: '/api/send-report',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/send-report': typeof ApiSendReportRoute
+  '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/jobs/$id': typeof JobsIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/send-report': typeof ApiSendReportRoute
+  '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/jobs/$id': typeof JobsIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/send-report': typeof ApiSendReportRoute
+  '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/jobs/$id': typeof JobsIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/admin/new'
     | '/admin/users'
     | '/api/send-report'
+    | '/api/sync-calendar'
     | '/jobs/$id'
     | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/admin/new'
     | '/admin/users'
     | '/api/send-report'
+    | '/api/sync-calendar'
     | '/jobs/$id'
     | '/lovable/email/queue/process'
   id:
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/admin/new'
     | '/admin/users'
     | '/api/send-report'
+    | '/api/sync-calendar'
     | '/jobs/$id'
     | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PerformanceReportRoute: typeof PerformanceReportRoute
   ApiSendReportRoute: typeof ApiSendReportRoute
+  ApiSyncCalendarRoute: typeof ApiSyncCalendarRoute
   JobsIdRoute: typeof JobsIdRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
@@ -201,6 +214,13 @@ declare module '@tanstack/react-router' {
       path: '/jobs/$id'
       fullPath: '/jobs/$id'
       preLoaderRoute: typeof JobsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sync-calendar': {
+      id: '/api/sync-calendar'
+      path: '/api/sync-calendar'
+      fullPath: '/api/sync-calendar'
+      preLoaderRoute: typeof ApiSyncCalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/send-report': {
@@ -253,9 +273,20 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PerformanceReportRoute: PerformanceReportRoute,
   ApiSendReportRoute: ApiSendReportRoute,
+  ApiSyncCalendarRoute: ApiSyncCalendarRoute,
   JobsIdRoute: JobsIdRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
