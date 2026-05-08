@@ -25,7 +25,6 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminNewRouteImport } from './routes/admin.new'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksOrganizeDriveRouteImport } from './routes/api/public/hooks/organize-drive'
-import { Route as ApiPublicHooksFindFolderRouteImport } from './routes/api/public/hooks/find-folder'
 
 const PerformanceReportRoute = PerformanceReportRouteImport.update({
   id: '/performance-report',
@@ -109,12 +108,6 @@ const ApiPublicHooksOrganizeDriveRoute =
     path: '/api/public/hooks/organize-drive',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksFindFolderRoute =
-  ApiPublicHooksFindFolderRouteImport.update({
-    id: '/api/public/hooks/find-folder',
-    path: '/api/public/hooks/find-folder',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -131,7 +124,6 @@ export interface FileRoutesByFullPath {
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/jobs/$id': typeof JobsIdRoute
-  '/api/public/hooks/find-folder': typeof ApiPublicHooksFindFolderRoute
   '/api/public/hooks/organize-drive': typeof ApiPublicHooksOrganizeDriveRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
@@ -150,7 +142,6 @@ export interface FileRoutesByTo {
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/jobs/$id': typeof JobsIdRoute
-  '/api/public/hooks/find-folder': typeof ApiPublicHooksFindFolderRoute
   '/api/public/hooks/organize-drive': typeof ApiPublicHooksOrganizeDriveRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
@@ -170,7 +161,6 @@ export interface FileRoutesById {
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/jobs/$id': typeof JobsIdRoute
-  '/api/public/hooks/find-folder': typeof ApiPublicHooksFindFolderRoute
   '/api/public/hooks/organize-drive': typeof ApiPublicHooksOrganizeDriveRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
@@ -191,7 +181,6 @@ export interface FileRouteTypes {
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/jobs/$id'
-    | '/api/public/hooks/find-folder'
     | '/api/public/hooks/organize-drive'
     | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
@@ -210,7 +199,6 @@ export interface FileRouteTypes {
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/jobs/$id'
-    | '/api/public/hooks/find-folder'
     | '/api/public/hooks/organize-drive'
     | '/lovable/email/queue/process'
   id:
@@ -229,7 +217,6 @@ export interface FileRouteTypes {
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/jobs/$id'
-    | '/api/public/hooks/find-folder'
     | '/api/public/hooks/organize-drive'
     | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
@@ -247,7 +234,6 @@ export interface RootRouteChildren {
   ApiSendReportRoute: typeof ApiSendReportRoute
   ApiSyncCalendarRoute: typeof ApiSyncCalendarRoute
   JobsIdRoute: typeof JobsIdRoute
-  ApiPublicHooksFindFolderRoute: typeof ApiPublicHooksFindFolderRoute
   ApiPublicHooksOrganizeDriveRoute: typeof ApiPublicHooksOrganizeDriveRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
@@ -366,13 +352,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksOrganizeDriveRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/find-folder': {
-      id: '/api/public/hooks/find-folder'
-      path: '/api/public/hooks/find-folder'
-      fullPath: '/api/public/hooks/find-folder'
-      preLoaderRoute: typeof ApiPublicHooksFindFolderRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -401,20 +380,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSendReportRoute: ApiSendReportRoute,
   ApiSyncCalendarRoute: ApiSyncCalendarRoute,
   JobsIdRoute: JobsIdRoute,
-  ApiPublicHooksFindFolderRoute: ApiPublicHooksFindFolderRoute,
   ApiPublicHooksOrganizeDriveRoute: ApiPublicHooksOrganizeDriveRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
