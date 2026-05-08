@@ -6,8 +6,8 @@ import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MapPin, Users, CalendarArrowDown } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, MapPin, Users, CalendarArrowDown, ChevronLeft, ChevronRight, List, CalendarDays } from "lucide-react";
+import { format, startOfWeek, endOfWeek, addDays, addWeeks, isSameDay, isSameWeek } from "date-fns";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -19,6 +19,8 @@ function AdminHome() {
   const location = useLocation();
   const qc = useQueryClient();
   const [importing, setImporting] = useState(false);
+  const [view, setView] = useState<"list" | "week">("list");
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
 
   useEffect(() => {
     if (!loading && role && role !== "admin") navigate({ to: "/" });
@@ -79,6 +81,14 @@ function AdminHome() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-semibold">All jobs</h1>
         <div className="flex gap-2">
+          <div className="flex rounded-md border overflow-hidden">
+            <Button size="sm" variant={view === "list" ? "secondary" : "ghost"} className="rounded-none" onClick={() => setView("list")}>
+              <List className="h-4 w-4" />
+            </Button>
+            <Button size="sm" variant={view === "week" ? "secondary" : "ghost"} className="rounded-none" onClick={() => setView("week")}>
+              <CalendarDays className="h-4 w-4" />
+            </Button>
+          </div>
           <Button size="sm" variant="outline" onClick={importFromCalendar} disabled={importing}>
             <CalendarArrowDown className="h-4 w-4 mr-1" />
             {importing ? "Importing…" : "Import"}
@@ -91,6 +101,16 @@ function AdminHome() {
           </Button>
         </div>
       </div>
+      {view === "week" ? (
+        <WeekView
+          jobs={jobs ?? []}
+          employees={employees ?? {}}
+          weekStart={weekStart}
+          onPrev={() => setWeekStart((d) => addWeeks(d, -1))}
+          onNext={() => setWeekStart((d) => addWeeks(d, 1))}
+          onToday={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))}
+        />
+      ) : (
       <div className="space-y-3">
         {jobs?.map((j) => (
           <Link key={j.id} to="/jobs/$id" params={{ id: j.id }}>
@@ -111,6 +131,79 @@ function AdminHome() {
         ))}
         {jobs?.length === 0 && <p className="text-sm text-muted-foreground">No jobs yet. Create one to get started.</p>}
       </div>
+      )}
     </AppShell>
+  );
+}
+
+function WeekView({
+  jobs,
+  employees,
+  weekStart,
+  onPrev,
+  onNext,
+  onToday,
+}: {
+  jobs: any[];
+  employees: Record<string, string>;
+  weekStart: Date;
+  onPrev: () => void;
+  onNext: () => void;
+  onToday: () => void;
+}) {
+  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const isCurrentWeek = isSameWeek(new Date(), weekStart, { weekStartsOn: 0 });
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="ghost" onClick={onPrev}><ChevronLeft className="h-4 w-4" /></Button>
+          <Button size="sm" variant="outline" onClick={onToday} disabled={isCurrentWeek}>Today</Button>
+          <Button size="sm" variant="ghost" onClick={onNext}><ChevronRight className="h-4 w-4" /></Button>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {format(weekStart, "MMM d")} – {format(weekEnd, "MMM d, yyyy")}
+        </p>
+      </div>
+      <div className="space-y-2">
+        {days.map((day) => {
+          const dayJobs = jobs.filter((j) => isSameDay(new Date(j.scheduled_at), day));
+          const isToday = isSameDay(day, new Date());
+          return (
+            <Card key={day.toISOString()} className={`p-3 ${isToday ? "border-primary" : ""}`}>
+              <div className="flex items-baseline justify-between mb-2">
+                <p className={`font-semibold text-sm ${isToday ? "text-primary" : ""}`}>
+                  {format(day, "EEEE")} <span className="text-muted-foreground font-normal">{format(day, "MMM d")}</span>
+                </p>
+                <span className="text-xs text-muted-foreground">{dayJobs.length} job{dayJobs.length === 1 ? "" : "s"}</span>
+              </div>
+              {dayJobs.length === 0 ? (
+                <p className="text-xs text-muted-foreground">—</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {dayJobs.map((j) => (
+                    <Link key={j.id} to="/jobs/$id" params={{ id: j.id }} className="block">
+                      <div className="flex items-center gap-2 p-2 rounded hover:bg-muted transition text-sm">
+                        <span className="text-xs text-muted-foreground tabular-nums w-16">{format(new Date(j.scheduled_at), "h:mm a")}</span>
+                        <Badge variant="secondary" className="capitalize text-xs">{j.status.replace("_", " ")}</Badge>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{j.customer_name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{j.address}</p>
+                        </div>
+                        <span className="text-xs text-muted-foreground hidden sm:inline truncate max-w-[120px]">
+                          {j.assigned_to ? employees[j.assigned_to] ?? "…" : "Unassigned"}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+    </div>
   );
 }
