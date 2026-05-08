@@ -24,6 +24,7 @@ import { Route as ApiDriveCustomerFilesRouteImport } from './routes/api/drive-cu
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminNewRouteImport } from './routes/admin.new'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicHooksOrganizeDriveRouteImport } from './routes/api/public/hooks/organize-drive'
 
 const PerformanceReportRoute = PerformanceReportRouteImport.update({
   id: '/performance-report',
@@ -101,6 +102,12 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksOrganizeDriveRoute =
+  ApiPublicHooksOrganizeDriveRouteImport.update({
+    id: '/api/public/hooks/organize-drive',
+    path: '/api/public/hooks/organize-drive',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/jobs/$id': typeof JobsIdRoute
+  '/api/public/hooks/organize-drive': typeof ApiPublicHooksOrganizeDriveRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
@@ -134,6 +142,7 @@ export interface FileRoutesByTo {
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/jobs/$id': typeof JobsIdRoute
+  '/api/public/hooks/organize-drive': typeof ApiPublicHooksOrganizeDriveRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
@@ -152,6 +161,7 @@ export interface FileRoutesById {
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/jobs/$id': typeof JobsIdRoute
+  '/api/public/hooks/organize-drive': typeof ApiPublicHooksOrganizeDriveRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/jobs/$id'
+    | '/api/public/hooks/organize-drive'
     | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/jobs/$id'
+    | '/api/public/hooks/organize-drive'
     | '/lovable/email/queue/process'
   id:
     | '__root__'
@@ -205,6 +217,7 @@ export interface FileRouteTypes {
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/jobs/$id'
+    | '/api/public/hooks/organize-drive'
     | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
@@ -221,6 +234,7 @@ export interface RootRouteChildren {
   ApiSendReportRoute: typeof ApiSendReportRoute
   ApiSyncCalendarRoute: typeof ApiSyncCalendarRoute
   JobsIdRoute: typeof JobsIdRoute
+  ApiPublicHooksOrganizeDriveRoute: typeof ApiPublicHooksOrganizeDriveRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -331,6 +345,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/organize-drive': {
+      id: '/api/public/hooks/organize-drive'
+      path: '/api/public/hooks/organize-drive'
+      fullPath: '/api/public/hooks/organize-drive'
+      preLoaderRoute: typeof ApiPublicHooksOrganizeDriveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -359,6 +380,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSendReportRoute: ApiSendReportRoute,
   ApiSyncCalendarRoute: ApiSyncCalendarRoute,
   JobsIdRoute: JobsIdRoute,
+  ApiPublicHooksOrganizeDriveRoute: ApiPublicHooksOrganizeDriveRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
