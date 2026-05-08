@@ -7,12 +7,6 @@ export const Route = createFileRoute("/api/drive-upload")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const auth = request.headers.get("authorization");
-        if (!auth?.startsWith("Bearer ")) return new Response("Unauthorized", { status: 401 });
-        const token = auth.slice(7);
-        const { data: claims } = await supabaseAdmin.auth.getClaims(token);
-        if (!claims?.claims?.sub) return new Response("Unauthorized", { status: 401 });
-
         let body: {
           kind: "intake" | "report" | "note";
           customerName: string;
@@ -26,6 +20,15 @@ export const Route = createFileRoute("/api/drive-upload")({
         }
         if (!body?.customerName || !body?.kind || !body?.data) {
           return new Response("Missing fields", { status: 400 });
+        }
+
+        // Intake forms are public; everything else requires an authenticated user
+        if (body.kind !== "intake") {
+          const auth = request.headers.get("authorization");
+          if (!auth?.startsWith("Bearer ")) return new Response("Unauthorized", { status: 401 });
+          const token = auth.slice(7);
+          const { data: claims } = await supabaseAdmin.auth.getClaims(token);
+          if (!claims?.claims?.sub) return new Response("Unauthorized", { status: 401 });
         }
 
         try {
