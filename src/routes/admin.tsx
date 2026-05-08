@@ -31,7 +31,7 @@ function AdminHome() {
       const { data, error } = await supabase
         .from("jobs")
         .select("*")
-        .order("scheduled_at", { ascending: false });
+        .order("scheduled_at", { ascending: true });
       if (error) throw error;
       return data;
     },
