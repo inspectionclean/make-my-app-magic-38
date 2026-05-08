@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Navigation, Phone, Mail, Send, User, ClipboardCheck, MapPinned } from "lucide-react";
+import { ArrowLeft, MapPin, Navigation, Phone, Mail, Send, User, ClipboardCheck, MapPinned, FileText, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { JobPhotos } from "@/components/JobPhotos";
 import { TimeTracker } from "@/components/TimeTracker";
@@ -43,6 +43,22 @@ function JobDetail() {
         supabase.from("performance_reports").select("id").eq("job_id", id).limit(1),
       ]);
       return { job, photos: photos ?? [], notes: notes ?? [], times: times ?? [], hasReport: (reports ?? []).length > 0 };
+    },
+  });
+
+  const customerName = data?.job?.customer_name;
+  const driveFiles = useQuery({
+    queryKey: ["drive-files", id, customerName],
+    enabled: !!user && !!customerName,
+    queryFn: async () => {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      const res = await fetch(
+        `/api/drive-customer-files?customer=${encodeURIComponent(customerName!)}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+      );
+      if (!res.ok) return { files: [] as any[] };
+      return (await res.json()) as { files: Array<{ id: string; name: string; mimeType: string; modifiedTime?: string; webViewLink?: string; text?: string }> };
     },
   });
 
