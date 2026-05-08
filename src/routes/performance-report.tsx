@@ -29,6 +29,9 @@ export const Route = createFileRoute("/performance-report")({
       },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    jobId: typeof search.jobId === "string" ? search.jobId : undefined,
+  }),
   component: PerformanceReportPage,
 });
 
@@ -71,6 +74,8 @@ const schema = z.object({
 
 function PerformanceReportPage() {
   const { user, loading } = useAuth();
+  const { jobId } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [areas, setAreas] = useState<string[]>([]);
@@ -119,6 +124,7 @@ function PerformanceReportPage() {
     setSubmitting(true);
     const { error } = await supabase.from("performance_reports").insert({
       submitted_by: user.id,
+      job_id: jobId ?? null,
       business_name: parsed.data.business_name,
       address: parsed.data.address,
       city: parsed.data.city,
@@ -166,6 +172,9 @@ function PerformanceReportPage() {
     }
     setSubmitted(true);
     toast.success("Performance report submitted.");
+    if (jobId) {
+      setTimeout(() => navigate({ to: "/jobs/$id", params: { id: jobId } }), 800);
+    }
   };
 
   if (submitted) {
