@@ -50,10 +50,29 @@ function JobDetail() {
     mutationFn: async (body: string) => {
       const { error } = await supabase.from("job_notes").insert({ job_id: id, body, author_id: user!.id });
       if (error) throw error;
+      // Mirror to Drive (fire and forget)
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        const customer = data?.job?.customer_name;
+        if (customer && token) {
+          void fetch("/api/drive-upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              kind: "note",
+              customerName: customer,
+              data: { body, job_id: id, author_id: user!.id, created_at: new Date().toISOString() },
+              baseName: `note-${new Date().toISOString().replace(/[:.]/g, "-")}`,
+            }),
+          }).catch(() => {});
+        }
+      } catch {}
     },
     onSuccess: () => {
       setNoteText("");
       qc.invalidateQueries({ queryKey: ["job", id] });
+      qc.invalidateQueries({ queryKey: ["drive-files", id] });
     },
     onError: (e: any) => toast.error(e.message),
   });
