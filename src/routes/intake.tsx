@@ -163,6 +163,23 @@ function IntakePage() {
       toast.error("Could not submit form. Please try again.");
       return;
     }
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      void fetch("/api/drive-upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          kind: "intake",
+          customerName: parsed.data.business_name,
+          data: parsed.data,
+          baseName: `intake-${new Date().toISOString().slice(0, 10)}`,
+        }),
+      }).catch(() => {});
+    } catch {}
     setSubmitted(true);
     toast.success("Intake submitted. We'll be in touch shortly.");
   };
