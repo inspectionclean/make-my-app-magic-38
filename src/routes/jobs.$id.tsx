@@ -5,6 +5,12 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MapPin, Navigation, Phone, Mail, Send, User, ClipboardCheck, MapPinned } from "lucide-react";
@@ -112,7 +118,13 @@ function JobDetail() {
     );
   }
 
-  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(j.address)}`;
+  const addrEnc = encodeURIComponent(j.address);
+  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${addrEnc}`;
+  const appleMapsUrl = `https://maps.apple.com/?daddr=${addrEnc}`;
+  const wazeUrl =
+    j.lat != null && j.lng != null
+      ? `https://waze.com/ul?ll=${j.lat},${j.lng}&navigate=yes`
+      : `https://waze.com/ul?q=${addrEnc}&navigate=yes`;
   const before = data.photos.filter((p) => p.type === "before");
   const after = data.photos.filter((p) => p.type === "after");
 
@@ -147,11 +159,24 @@ function JobDetail() {
             </a>
           )}
         </div>
-        <a href={mapsUrl} target="_blank" rel="noreferrer" className="block mt-3">
-          <Button className="w-full" size="lg">
-            <Navigation className="h-4 w-4 mr-2" /> Open in Google Maps
-          </Button>
-        </a>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="w-full mt-3" size="lg">
+              <Navigation className="h-4 w-4 mr-2" /> Navigate
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+            <DropdownMenuItem asChild>
+              <a href={googleMapsUrl} target="_blank" rel="noreferrer">Google Maps</a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href={appleMapsUrl} target="_blank" rel="noreferrer">Apple Maps</a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href={wazeUrl} target="_blank" rel="noreferrer">Waze</a>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         {j.status !== "completed" && (
           <div className="grid grid-cols-2 gap-2 mt-2">
             {j.status === "scheduled" && (
