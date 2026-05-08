@@ -169,6 +169,71 @@ export async function downloadFileText(fileId: string): Promise<string> {
   return res.text();
 }
 
+export async function listLooseFilesInActiveCustomers(): Promise<
+  { monthId: string; monthName: string; files: { id: string; name: string; mimeType: string }[] }[]
+> {
+  const active = await findFolder(ACTIVE_CUSTOMERS_FOLDER);
+  if (!active) return [];
+  const months = await listChildFolders(active);
+  const out: { monthId: string; monthName: string; files: { id: string; name: string; mimeType: string }[] }[] = [];
+  for (const m of months) {
+    const q = `'${m.id}' in parents and mimeType!='application/vnd.google-apps.folder' and trashed=false`;
+    const url = `/drive/v3/files?q=${encodeURIComponent(q)}&fields=${encodeURIComponent("files(id,name,mimeType)")}&pageSize=1000`;
+    const res = await gfetch(url);
+    const json = (await res.json()) as { files?: { id: string; name: string; mimeType: string }[] };
+    out.push({ monthId: m.id, monthName: m.name, files: json.files ?? [] });
+  }
+  return out;
+}
+
+export async function moveFile(fileId: string, addParentId: string, removeParentId: string): Promise<void> {
+  await gfetch(
+    `/drive/v3/files/${fileId}?addParents=${encodeURIComponent(addParentId)}&removeParents=${encodeURIComponent(removeParentId)}&fields=id,parents`,
+    { method: "PATCH", headers: { "Content-Type": "application/json" }, body: "{}" },
+  );
+}
+
+function stripExt(name: string): string {
+  const i = name.lastIndexOf(".");
+  if (i <= 0) return name;
+  return name.slice(0, i);
+}
+
+export async function organizeActiveCustomers(): Promise<{
+  scanned: number;
+  organized: number;
+  skipped: number;
+  details: { file: string; month: string; folder: string; action: "moved" | "skipped"; reason?: string }[];
+}> {
+  const months = await listLooseFilesInActiveCustomers();
+  const details: { file: string; month: string; folder: string; action: "moved" | "skipped"; reason?: string }[] = [];
+  let scanned = 0;
+  let organized = 0;
+  let skipped = 0;
+  for (const m of months) {
+    for (const f of m.files) {
+      scanned++;
+      const folderName = stripExt(f.name).trim();
+      if (!folderName) {
+        skipped++;
+        details.push({ file: f.name, month: m.monthName, folder: "", action: "skipped", reason: "empty name" });
+        continue;
+      }
+      try {
+        let folderId = await findFolder(folderName, m.monthId);
+        if (!folderId) folderId = await createFolder(folderName, m.monthId);
+        await moveFile(f.id, folderId, m.monthId);
+        organized++;
+        details.push({ file: f.name, month: m.monthName, folder: folderName, action: "moved" });
+      } catch (e: any) {
+        skipped++;
+        details.push({ file: f.name, month: m.monthName, folder: folderName, action: "skipped", reason: e?.message ?? "error" });
+      }
+    }
+  }
+  return { scanned, organized, skipped, details };
+}
+
 export type DriveFile = {
   id: string;
   name: string;
