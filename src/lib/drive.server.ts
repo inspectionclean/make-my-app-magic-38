@@ -296,6 +296,23 @@ export async function scheduleNextDueMonth(opts: {
   return { folderId, from: currentParent.name, to: monthFolderName(target), toFolderId };
 }
 
+/**
+ * List all customer subfolder names under the month folder for the given target date.
+ * Returns [] if the month folder does not exist.
+ */
+export async function listCustomersDueForMonth(target: Date): Promise<{ monthName: string; customers: { id: string; name: string }[] }> {
+  const active = await findActiveCustomersFolder();
+  if (!active) return { monthName: monthFolderName(target), customers: [] };
+  const months = await listChildFolders(active);
+  const match = months.find((f) => {
+    const p = parseMonthFolder(f.name.trim());
+    return p && p.month === target.getUTCMonth() + 1 && p.year === target.getUTCFullYear();
+  });
+  if (!match) return { monthName: monthFolderName(target), customers: [] };
+  const customers = await listChildFolders(match.id);
+  return { monthName: match.name, customers };
+}
+
 function stripExt(name: string): string {
   const i = name.lastIndexOf(".");
   if (i <= 0) return name;

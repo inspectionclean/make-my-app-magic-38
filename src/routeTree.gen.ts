@@ -9,12 +9,14 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as PerformanceReportRouteImport } from './routes/performance-report'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsIdRouteImport } from './routes/jobs.$id'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as ApiSyncCalendarRouteImport } from './routes/api/sync-calendar'
 import { Route as ApiSendReportRouteImport } from './routes/api/send-report'
 import { Route as ApiPrefillReportRouteImport } from './routes/api/prefill-report'
@@ -23,9 +25,18 @@ import { Route as ApiDriveUploadRouteImport } from './routes/api/drive-upload'
 import { Route as ApiDriveCustomerFilesRouteImport } from './routes/api/drive-customer-files'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminNewRouteImport } from './routes/admin.new'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksOrganizeDriveRouteImport } from './routes/api/public/hooks/organize-drive'
+import { Route as ApiPublicHooksMonthlyDueEmailRouteImport } from './routes/api/public/hooks/monthly-due-email'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PerformanceReportRoute = PerformanceReportRouteImport.update({
   id: '/performance-report',
   path: '/performance-report',
@@ -54,6 +65,11 @@ const IndexRoute = IndexRouteImport.update({
 const JobsIdRoute = JobsIdRouteImport.update({
   id: '/jobs/$id',
   path: '/jobs/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSyncCalendarRoute = ApiSyncCalendarRouteImport.update({
@@ -96,6 +112,23 @@ const AdminNewRoute = AdminNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AdminRoute,
 } as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -108,6 +141,12 @@ const ApiPublicHooksOrganizeDriveRoute =
     path: '/api/public/hooks/organize-drive',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksMonthlyDueEmailRoute =
+  ApiPublicHooksMonthlyDueEmailRouteImport.update({
+    id: '/api/public/hooks/monthly-due-email',
+    path: '/api/public/hooks/monthly-due-email',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -115,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/intake': typeof IntakeRoute
   '/login': typeof LoginRoute
   '/performance-report': typeof PerformanceReportRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/drive-customer-files': typeof ApiDriveCustomerFilesRoute
@@ -123,9 +163,14 @@ export interface FileRoutesByFullPath {
   '/api/prefill-report': typeof ApiPrefillReportRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/jobs/$id': typeof JobsIdRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/hooks/monthly-due-email': typeof ApiPublicHooksMonthlyDueEmailRoute
   '/api/public/hooks/organize-drive': typeof ApiPublicHooksOrganizeDriveRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -133,6 +178,7 @@ export interface FileRoutesByTo {
   '/intake': typeof IntakeRoute
   '/login': typeof LoginRoute
   '/performance-report': typeof PerformanceReportRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/drive-customer-files': typeof ApiDriveCustomerFilesRoute
@@ -141,9 +187,14 @@ export interface FileRoutesByTo {
   '/api/prefill-report': typeof ApiPrefillReportRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/jobs/$id': typeof JobsIdRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/hooks/monthly-due-email': typeof ApiPublicHooksMonthlyDueEmailRoute
   '/api/public/hooks/organize-drive': typeof ApiPublicHooksOrganizeDriveRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -152,6 +203,7 @@ export interface FileRoutesById {
   '/intake': typeof IntakeRoute
   '/login': typeof LoginRoute
   '/performance-report': typeof PerformanceReportRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/drive-customer-files': typeof ApiDriveCustomerFilesRoute
@@ -160,9 +212,14 @@ export interface FileRoutesById {
   '/api/prefill-report': typeof ApiPrefillReportRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/jobs/$id': typeof JobsIdRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/hooks/monthly-due-email': typeof ApiPublicHooksMonthlyDueEmailRoute
   '/api/public/hooks/organize-drive': typeof ApiPublicHooksOrganizeDriveRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -172,6 +229,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/login'
     | '/performance-report'
+    | '/unsubscribe'
     | '/admin/new'
     | '/admin/users'
     | '/api/drive-customer-files'
@@ -180,9 +238,14 @@ export interface FileRouteTypes {
     | '/api/prefill-report'
     | '/api/send-report'
     | '/api/sync-calendar'
+    | '/email/unsubscribe'
     | '/jobs/$id'
+    | '/lovable/email/suppression'
+    | '/api/public/hooks/monthly-due-email'
     | '/api/public/hooks/organize-drive'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -190,6 +253,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/login'
     | '/performance-report'
+    | '/unsubscribe'
     | '/admin/new'
     | '/admin/users'
     | '/api/drive-customer-files'
@@ -198,9 +262,14 @@ export interface FileRouteTypes {
     | '/api/prefill-report'
     | '/api/send-report'
     | '/api/sync-calendar'
+    | '/email/unsubscribe'
     | '/jobs/$id'
+    | '/lovable/email/suppression'
+    | '/api/public/hooks/monthly-due-email'
     | '/api/public/hooks/organize-drive'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   id:
     | '__root__'
     | '/'
@@ -208,6 +277,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/login'
     | '/performance-report'
+    | '/unsubscribe'
     | '/admin/new'
     | '/admin/users'
     | '/api/drive-customer-files'
@@ -216,9 +286,14 @@ export interface FileRouteTypes {
     | '/api/prefill-report'
     | '/api/send-report'
     | '/api/sync-calendar'
+    | '/email/unsubscribe'
     | '/jobs/$id'
+    | '/lovable/email/suppression'
+    | '/api/public/hooks/monthly-due-email'
     | '/api/public/hooks/organize-drive'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -227,19 +302,32 @@ export interface RootRouteChildren {
   IntakeRoute: typeof IntakeRoute
   LoginRoute: typeof LoginRoute
   PerformanceReportRoute: typeof PerformanceReportRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   ApiDriveCustomerFilesRoute: typeof ApiDriveCustomerFilesRoute
   ApiDriveUploadRoute: typeof ApiDriveUploadRoute
   ApiImportCalendarRoute: typeof ApiImportCalendarRoute
   ApiPrefillReportRoute: typeof ApiPrefillReportRoute
   ApiSendReportRoute: typeof ApiSendReportRoute
   ApiSyncCalendarRoute: typeof ApiSyncCalendarRoute
+  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   JobsIdRoute: typeof JobsIdRoute
+  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicHooksMonthlyDueEmailRoute: typeof ApiPublicHooksMonthlyDueEmailRoute
   ApiPublicHooksOrganizeDriveRoute: typeof ApiPublicHooksOrganizeDriveRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/performance-report': {
       id: '/performance-report'
       path: '/performance-report'
@@ -280,6 +368,13 @@ declare module '@tanstack/react-router' {
       path: '/jobs/$id'
       fullPath: '/jobs/$id'
       preLoaderRoute: typeof JobsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/sync-calendar': {
@@ -338,6 +433,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminNewRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -350,6 +466,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/organize-drive'
       fullPath: '/api/public/hooks/organize-drive'
       preLoaderRoute: typeof ApiPublicHooksOrganizeDriveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/monthly-due-email': {
+      id: '/api/public/hooks/monthly-due-email'
+      path: '/api/public/hooks/monthly-due-email'
+      fullPath: '/api/public/hooks/monthly-due-email'
+      preLoaderRoute: typeof ApiPublicHooksMonthlyDueEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -373,16 +496,32 @@ const rootRouteChildren: RootRouteChildren = {
   IntakeRoute: IntakeRoute,
   LoginRoute: LoginRoute,
   PerformanceReportRoute: PerformanceReportRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   ApiDriveCustomerFilesRoute: ApiDriveCustomerFilesRoute,
   ApiDriveUploadRoute: ApiDriveUploadRoute,
   ApiImportCalendarRoute: ApiImportCalendarRoute,
   ApiPrefillReportRoute: ApiPrefillReportRoute,
   ApiSendReportRoute: ApiSendReportRoute,
   ApiSyncCalendarRoute: ApiSyncCalendarRoute,
+  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   JobsIdRoute: JobsIdRoute,
+  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicHooksMonthlyDueEmailRoute: ApiPublicHooksMonthlyDueEmailRoute,
   ApiPublicHooksOrganizeDriveRoute: ApiPublicHooksOrganizeDriveRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
