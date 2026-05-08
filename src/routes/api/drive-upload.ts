@@ -163,7 +163,6 @@ function reportSections(d: Record<string, unknown>): PdfSection[] {
 
   const signoff = pickRows(d, [
     ["technician_name", "Technician"],
-    ["technician_signature", "Technician Signature"],
     ["customer_rep", "Customer Representative"],
     ["customer_signature", "Customer Signature"],
     ["signature_date", "Signed"],
