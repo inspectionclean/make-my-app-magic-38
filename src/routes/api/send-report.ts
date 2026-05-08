@@ -77,7 +77,7 @@ export const Route = createFileRoute("/api/send-report")({
 
             ${section("Findings & recommendations", row("Findings", report.findings) + row("Recommendations", report.recommendations) + row("Recommended items", report.recommendation_items) + row("Photos taken", report.photos))}
 
-            ${section("Sign-off", row("Technician", report.technician_name) + row("Technician signature", report.technician_signature) + row("Customer rep", report.customer_rep) + row("Signed", report.signature_date))}
+            ${section("Sign-off", row("Technician", report.technician_name) + row("Customer rep", report.customer_rep) + row("Signed", report.signature_date))}
 
             ${photoSection("Before photos", beforeUrls)}
             ${photoSection("After photos", afterUrls)}
