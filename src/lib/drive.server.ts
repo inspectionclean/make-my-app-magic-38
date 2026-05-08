@@ -76,10 +76,11 @@ async function findCustomerFolderUnderActive(customerName: string): Promise<stri
   const safe = customerName.trim();
   if (!safe) return null;
 
-  // 1) Search globally for a folder with this name, then keep ones whose
-  //    parent is a month folder directly under "Active Customers".
+  // Search for folders whose name matches OR contains the customer name,
+  // then keep ones whose parent is a month folder directly under "Active Customers".
+  // This handles cases like job name "Roma's" matching folder "Roma's Family Restaurant-Woodruff".
   const q = [
-    `name='${escapeQ(safe)}'`,
+    `(name='${escapeQ(safe)}' or name contains '${escapeQ(safe)}')`,
     "mimeType='application/vnd.google-apps.folder'",
     "trashed=false",
   ].join(" and ");
@@ -91,8 +92,14 @@ async function findCustomerFolderUnderActive(customerName: string): Promise<stri
 
   const monthFolders = await listChildFolders(active);
   const monthIds = new Set(monthFolders.map((f) => f.id));
-  const match = candidates.find((c) => c.parents?.some((p) => monthIds.has(p)));
-  return match?.id ?? null;
+  const inMonth = candidates.filter((c) => c.parents?.some((p) => monthIds.has(p)));
+  if (!inMonth.length) return null;
+
+  // Prefer exact match, then shortest name (most specific match for the prefix).
+  const exact = inMonth.find((c) => c.name.toLowerCase() === safe.toLowerCase());
+  if (exact) return exact.id;
+  inMonth.sort((a, b) => a.name.length - b.name.length);
+  return inMonth[0].id;
 }
 
 export async function getOrCreateCustomerFolder(customerName: string): Promise<string> {
