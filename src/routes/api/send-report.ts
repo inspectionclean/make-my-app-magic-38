@@ -27,6 +27,31 @@ export const Route = createFileRoute("/api/send-report")({
           return new Response("No performance report submitted for this job", { status: 400 });
         }
 
+        const { data: jobPhotos } = await supabaseAdmin
+          .from("job_photos")
+          .select("*")
+          .eq("job_id", jobId)
+          .order("taken_at", { ascending: true });
+        const photoUrl = async (path: string) => {
+          const { data } = await supabaseAdmin.storage
+            .from("job-photos")
+            .createSignedUrl(path, 60 * 60 * 24 * 7);
+          return data?.signedUrl ?? null;
+        };
+        const beforePhotos = (jobPhotos ?? []).filter((p) => p.type === "before");
+        const afterPhotos = (jobPhotos ?? []).filter((p) => p.type === "after");
+        const beforeUrls = (await Promise.all(beforePhotos.map((p) => photoUrl(p.storage_path)))).filter(Boolean) as string[];
+        const afterUrls = (await Promise.all(afterPhotos.map((p) => photoUrl(p.storage_path)))).filter(Boolean) as string[];
+        const photoSection = (title: string, urls: string[]) =>
+          urls.length
+            ? `<h3 style="margin:18px 0 6px">${escapeHtml(title)}</h3><div style="display:flex;flex-wrap:wrap;gap:8px">${urls
+                .map(
+                  (u) =>
+                    `<a href="${u}"><img src="${u}" alt="${escapeHtml(title)}" style="width:180px;height:135px;object-fit:cover;border-radius:6px;border:1px solid #e5e5e5" /></a>`,
+                )
+                .join("")}</div>`
+            : "";
+
         const row = (label: string, value: unknown) => {
           if (value == null || value === "" || (Array.isArray(value) && value.length === 0)) return "";
           const v = Array.isArray(value) ? value.join(", ") : typeof value === "boolean" ? (value ? "Yes" : "No") : String(value);
@@ -52,7 +77,10 @@ export const Route = createFileRoute("/api/send-report")({
 
             ${section("Findings & recommendations", row("Findings", report.findings) + row("Recommendations", report.recommendations) + row("Recommended items", report.recommendation_items) + row("Photos taken", report.photos))}
 
-            ${section("Sign-off", row("Technician", report.technician_name) + row("Technician signature", report.technician_signature) + row("Customer rep", report.customer_rep) + row("Customer signature", report.customer_signature) + row("Signed", report.signature_date))}
+            ${section("Sign-off", row("Technician", report.technician_name) + row("Technician signature", report.technician_signature) + row("Customer rep", report.customer_rep) + row("Signed", report.signature_date))}
+
+            ${photoSection("Before photos", beforeUrls)}
+            ${photoSection("After photos", afterUrls)}
           </div>`;
 
         const ALWAYS_CC = "service@inspectionclean.com";

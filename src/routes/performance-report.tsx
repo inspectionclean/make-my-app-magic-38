@@ -1,5 +1,5 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,9 +90,90 @@ function PerformanceReportPage() {
   const [fanCheck, setFanCheck] = useState("");
   const [filterCondition, setFilterCondition] = useState("");
   const [accessPanelCondition, setAccessPanelCondition] = useState("");
+  const [prefill, setPrefill] = useState<any>(null);
+  const [prefillLoading, setPrefillLoading] = useState<boolean>(!!jobId);
+
+  useEffect(() => {
+    if (!jobId || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const res = await fetch(`/api/prefill-report?jobId=${jobId}`, {
+          headers: { Authorization: `Bearer ${sess.session?.access_token ?? ""}` },
+        });
+        if (!res.ok) return;
+        const d = await res.json();
+        if (cancelled) return;
+        setPrefill(d);
+        const sys = d.lastReport ?? d.intake ?? null;
+        if (sys) {
+          if (sys.fire_suppression != null) setFireSuppression(sys.fire_suppression ? "yes" : "no");
+          if (sys.access_panels != null) setAccessPanels(sys.access_panels ? "yes" : "no");
+          if (sys.roof_access != null) setRoofAccess(sys.roof_access ? "yes" : "no");
+        }
+        if (d.lastReport) {
+          if (d.lastReport.areas_cleaned) setAreas(d.lastReport.areas_cleaned);
+          if (d.lastReport.recommendation_items) setRecItems(d.lastReport.recommendation_items);
+          if (d.lastReport.service_type) setServiceType(d.lastReport.service_type);
+        } else if (d.intake?.frequency) {
+          setServiceType(d.intake.frequency);
+        }
+      } finally {
+        if (!cancelled) setPrefillLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [jobId, user]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
+  if (prefillLoading) {
+    return (
+      <AppShell>
+        <main className="mx-auto max-w-3xl px-4 py-8">
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        </main>
+      </AppShell>
+    );
+  }
+
+  // Source priority: lastReport > intake > job (calendar)
+  const intake = prefill?.intake;
+  const last = prefill?.lastReport;
+  const job = prefill?.job;
+  const pick = <T,>(...vals: (T | null | undefined)[]) =>
+    vals.find((v) => v !== null && v !== undefined && v !== "") ?? "";
+
+  const toTime = (ts?: string | null) => {
+    if (!ts) return "";
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return "";
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  };
+  const today = new Date().toISOString().slice(0, 10);
+
+  const def = {
+    business_name: pick(last?.business_name, intake?.business_name, job?.customer_name),
+    address: pick(last?.address, intake?.service_address, job?.address),
+    city: pick(last?.city, intake?.city),
+    state: pick(last?.state, intake?.state),
+    zip: pick(last?.zip, intake?.zip),
+    contact_name: pick(last?.contact_name, intake?.contact_name),
+    phone: pick(last?.phone, intake?.phone, job?.customer_phone),
+    email: pick(last?.email, intake?.email, job?.customer_email),
+    service_date: today,
+    arrival_time: toTime(prefill?.firstTime?.arrived_at),
+    completion_time: toTime(prefill?.lastTime?.left_at),
+    technicians: pick(last?.technicians, prefill?.technicianName),
+    previous_cleaning_date: pick(last?.service_date, intake?.last_cleaning),
+    hoods: pick(last?.hoods, intake?.hoods),
+    fans: pick(last?.fans, intake?.fans),
+    duct_runs: pick(last?.duct_runs, intake?.duct_runs),
+    technician_name: pick(last?.technician_name, prefill?.technicianName),
+    customer_rep: pick(last?.customer_rep, intake?.contact_name),
+    signature_date: today,
+  };
 
   const toggle = (
     setter: React.Dispatch<React.SetStateAction<string[]>>,
@@ -161,7 +242,7 @@ function PerformanceReportPage() {
       technician_name: txt("technician_name"),
       technician_signature: txt("technician_signature"),
       customer_rep: txt("customer_rep"),
-      customer_signature: txt("customer_signature"),
+      customer_signature: null,
       signature_date: raw.signature_date,
     });
     setSubmitting(false);
@@ -201,50 +282,50 @@ function PerformanceReportPage() {
         <form onSubmit={handleSubmit} className="mt-8 space-y-10">
           <Section title="Customer Information">
             <Field label="Business Name *" id="business_name">
-              <Input id="business_name" name="business_name" required autoComplete="organization" />
+              <Input id="business_name" name="business_name" required autoComplete="organization" defaultValue={def.business_name as string} />
             </Field>
             <Field label="Address *" id="address">
-              <Input id="address" name="address" required autoComplete="street-address" />
+              <Input id="address" name="address" required autoComplete="street-address" defaultValue={def.address as string} />
             </Field>
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="City *" id="city">
-                <Input id="city" name="city" required autoComplete="address-level2" />
+                <Input id="city" name="city" required autoComplete="address-level2" defaultValue={def.city as string} />
               </Field>
               <Field label="State *" id="state">
-                <Input id="state" name="state" required autoComplete="address-level1" />
+                <Input id="state" name="state" required autoComplete="address-level1" defaultValue={def.state as string} />
               </Field>
               <Field label="Zip *" id="zip">
-                <Input id="zip" name="zip" required autoComplete="postal-code" />
+                <Input id="zip" name="zip" required autoComplete="postal-code" defaultValue={def.zip as string} />
               </Field>
             </div>
             <Field label="Contact Name *" id="contact_name">
-              <Input id="contact_name" name="contact_name" required autoComplete="name" />
+              <Input id="contact_name" name="contact_name" required autoComplete="name" defaultValue={def.contact_name as string} />
             </Field>
             <Field label="Phone *" id="phone">
-              <Input id="phone" name="phone" type="tel" required autoComplete="tel" />
+              <Input id="phone" name="phone" type="tel" required autoComplete="tel" defaultValue={def.phone as string} />
             </Field>
             <Field label="Email" id="email">
-              <Input id="email" name="email" type="email" autoComplete="email" />
+              <Input id="email" name="email" type="email" autoComplete="email" defaultValue={def.email as string} />
             </Field>
           </Section>
 
           <Section title="Service Information">
             <Field label="Service Date *" id="service_date">
-              <Input id="service_date" name="service_date" type="date" required />
+              <Input id="service_date" name="service_date" type="date" required defaultValue={def.service_date} />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Arrival Time" id="arrival_time">
-                <Input id="arrival_time" name="arrival_time" type="time" />
+                <Input id="arrival_time" name="arrival_time" type="time" defaultValue={def.arrival_time} />
               </Field>
               <Field label="Completion Time" id="completion_time">
-                <Input id="completion_time" name="completion_time" type="time" />
+                <Input id="completion_time" name="completion_time" type="time" defaultValue={def.completion_time} />
               </Field>
             </div>
             <Field label="Technicians" id="technicians">
-              <Input id="technicians" name="technicians" />
+              <Input id="technicians" name="technicians" defaultValue={def.technicians as string} />
             </Field>
             <Field label="Previous Cleaning Date" id="previous_cleaning_date">
-              <Input id="previous_cleaning_date" name="previous_cleaning_date" type="date" />
+              <Input id="previous_cleaning_date" name="previous_cleaning_date" type="date" defaultValue={def.previous_cleaning_date as string} />
             </Field>
             <Field label="Service Type" id="service_type">
               <SimpleSelect
@@ -265,13 +346,13 @@ function PerformanceReportPage() {
           <Section title="System Details">
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Number of Hoods" id="hoods">
-                <Input id="hoods" name="hoods" type="number" min={0} />
+                <Input id="hoods" name="hoods" type="number" min={0} defaultValue={def.hoods as any} />
               </Field>
               <Field label="Number of Exhaust Fans" id="fans">
-                <Input id="fans" name="fans" type="number" min={0} />
+                <Input id="fans" name="fans" type="number" min={0} defaultValue={def.fans as any} />
               </Field>
               <Field label="Number of Duct Runs" id="duct_runs">
-                <Input id="duct_runs" name="duct_runs" type="number" min={0} />
+                <Input id="duct_runs" name="duct_runs" type="number" min={0} defaultValue={def.duct_runs as any} />
               </Field>
             </div>
             <YesNo label="Fire Suppression System?" value={fireSuppression} onChange={setFireSuppression} name="fire_suppression" />
@@ -351,19 +432,16 @@ function PerformanceReportPage() {
 
           <Section title="Service Verification">
             <Field label="Technician Name" id="technician_name">
-              <Input id="technician_name" name="technician_name" autoComplete="name" />
+              <Input id="technician_name" name="technician_name" autoComplete="name" defaultValue={def.technician_name as string} />
             </Field>
             <Field label="Technician Signature" id="technician_signature">
               <Input id="technician_signature" name="technician_signature" />
             </Field>
             <Field label="Customer Representative" id="customer_rep">
-              <Input id="customer_rep" name="customer_rep" autoComplete="name" />
-            </Field>
-            <Field label="Customer Signature" id="customer_signature">
-              <Input id="customer_signature" name="customer_signature" />
+              <Input id="customer_rep" name="customer_rep" autoComplete="name" defaultValue={def.customer_rep as string} />
             </Field>
             <Field label="Date *" id="signature_date">
-              <Input id="signature_date" name="signature_date" type="date" required />
+              <Input id="signature_date" name="signature_date" type="date" required defaultValue={def.signature_date} />
             </Field>
           </Section>
 
