@@ -92,6 +92,14 @@ function PerformanceReportPage() {
   const [accessPanelCondition, setAccessPanelCondition] = useState("");
   const [prefill, setPrefill] = useState<any>(null);
   const [prefillLoading, setPrefillLoading] = useState<boolean>(!!jobId);
+  const [phone, setPhone] = useState("");
+
+  const formatPhone = (v: string) => {
+    const d = v.replace(/\D/g, "").slice(0, 10);
+    if (d.length < 4) return d;
+    if (d.length < 7) return `(${d.slice(0, 3)})${d.slice(3)}`;
+    return `(${d.slice(0, 3)})${d.slice(3, 6)}-${d.slice(6)}`;
+  };
 
   useEffect(() => {
     if (!jobId || !user) return;
@@ -119,6 +127,8 @@ function PerformanceReportPage() {
         } else if (d.intake?.frequency) {
           setServiceType(d.intake.frequency);
         }
+        const initialPhone = d.lastReport?.phone ?? d.intake?.phone ?? d.job?.customer_phone ?? "";
+        if (initialPhone) setPhone(formatPhone(initialPhone));
       } finally {
         if (!cancelled) setPrefillLoading(false);
       }
@@ -305,7 +315,16 @@ function PerformanceReportPage() {
               <Input id="contact_name" name="contact_name" required autoComplete="name" defaultValue={def.contact_name as string} />
             </Field>
             <Field label="Phone *" id="phone">
-              <Input id="phone" name="phone" type="tel" required autoComplete="tel" defaultValue={def.phone as string} />
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                required
+                autoComplete="tel"
+                value={phone}
+                onChange={(e) => setPhone(formatPhone(e.target.value))}
+                placeholder="(555)555-5555"
+              />
             </Field>
             <Field label="Email" id="email">
               <Input id="email" name="email" type="email" autoComplete="email" defaultValue={def.email as string} />
