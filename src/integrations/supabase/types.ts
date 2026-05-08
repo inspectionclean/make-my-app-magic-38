@@ -292,6 +292,7 @@ export type Database = {
           customer_name: string
           customer_phone: string | null
           description: string | null
+          google_event_id: string | null
           id: string
           lat: number | null
           lng: number | null
@@ -311,6 +312,7 @@ export type Database = {
           customer_name: string
           customer_phone?: string | null
           description?: string | null
+          google_event_id?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
@@ -330,6 +332,7 @@ export type Database = {
           customer_name?: string
           customer_phone?: string | null
           description?: string | null
+          google_event_id?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
