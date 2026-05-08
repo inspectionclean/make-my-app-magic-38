@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { geocodeAddress } from "@/lib/geocode";
 
 export const Route = createFileRoute("/admin/new")({ component: NewJobPage });
 
@@ -62,6 +63,7 @@ function NewJobPage() {
       return;
     }
     setSubmitting(true);
+    const coords = await geocodeAddress(form.address);
     const { data, error } = await supabase
       .from("jobs")
       .insert({
@@ -69,6 +71,8 @@ function NewJobPage() {
         customer_email: form.customer_email || null,
         customer_phone: form.customer_phone || null,
         address: form.address,
+        lat: coords?.lat ?? null,
+        lng: coords?.lng ?? null,
         description: form.description || null,
         scheduled_at: new Date(form.scheduled_at).toISOString(),
         assigned_to: form.assigned_to || null,

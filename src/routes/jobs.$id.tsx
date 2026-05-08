@@ -7,12 +7,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Navigation, Phone, Mail, Send, User, ClipboardCheck } from "lucide-react";
+import { ArrowLeft, MapPin, Navigation, Phone, Mail, Send, User, ClipboardCheck, MapPinned } from "lucide-react";
 import { format } from "date-fns";
 import { JobPhotos } from "@/components/JobPhotos";
 import { TimeTracker } from "@/components/TimeTracker";
 import { useState } from "react";
 import { toast } from "sonner";
+import { geocodeAddress } from "@/lib/geocode";
 
 export const Route = createFileRoute("/jobs/$id")({ component: JobDetail });
 
@@ -22,6 +23,7 @@ function JobDetail() {
   const qc = useQueryClient();
   const [noteText, setNoteText] = useState("");
   const [sending, setSending] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["job", id],
@@ -77,6 +79,21 @@ function JobDetail() {
     } finally {
       setSending(false);
     }
+  };
+
+  const fixCoordinates = async () => {
+    if (!data?.job) return;
+    setGeocoding(true);
+    const coords = await geocodeAddress(data.job.address);
+    setGeocoding(false);
+    if (!coords) {
+      toast.error("Could not find coordinates for this address");
+      return;
+    }
+    const { error } = await supabase.from("jobs").update({ lat: coords.lat, lng: coords.lng }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Coordinates saved — auto-tracking enabled");
+    qc.invalidateQueries({ queryKey: ["job", id] });
   };
 
   if (isLoading || !data) {
@@ -174,6 +191,12 @@ function JobDetail() {
         jobLng={j.lng}
         entries={data.times}
       />
+      {(j.lat == null || j.lng == null) && (
+        <Button variant="outline" size="sm" className="mt-2 w-full" onClick={fixCoordinates} disabled={geocoding}>
+          <MapPinned className="h-4 w-4 mr-2" />
+          {geocoding ? "Locating…" : "Geocode address for auto-tracking"}
+        </Button>
+      )}
 
       <div className="mt-4">
         <h2 className="font-semibold mb-2">Before</h2>
