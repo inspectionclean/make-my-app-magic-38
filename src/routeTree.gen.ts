@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as PerformanceReportRouteImport } from './routes/performance-report'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IntakeRouteImport } from './routes/intake'
@@ -31,6 +32,11 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as ApiPublicHooksOrganizeDriveRouteImport } from './routes/api/public/hooks/organize-drive'
 import { Route as ApiPublicHooksMonthlyDueEmailRouteImport } from './routes/api/public/hooks/monthly-due-email'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PerformanceReportRoute = PerformanceReportRouteImport.update({
   id: '/performance-report',
   path: '/performance-report',
@@ -148,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/intake': typeof IntakeRoute
   '/login': typeof LoginRoute
   '/performance-report': typeof PerformanceReportRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/drive-customer-files': typeof ApiDriveCustomerFilesRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/intake': typeof IntakeRoute
   '/login': typeof LoginRoute
   '/performance-report': typeof PerformanceReportRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/drive-customer-files': typeof ApiDriveCustomerFilesRoute
@@ -195,6 +203,7 @@ export interface FileRoutesById {
   '/intake': typeof IntakeRoute
   '/login': typeof LoginRoute
   '/performance-report': typeof PerformanceReportRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/drive-customer-files': typeof ApiDriveCustomerFilesRoute
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/login'
     | '/performance-report'
+    | '/unsubscribe'
     | '/admin/new'
     | '/admin/users'
     | '/api/drive-customer-files'
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/login'
     | '/performance-report'
+    | '/unsubscribe'
     | '/admin/new'
     | '/admin/users'
     | '/api/drive-customer-files'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/login'
     | '/performance-report'
+    | '/unsubscribe'
     | '/admin/new'
     | '/admin/users'
     | '/api/drive-customer-files'
@@ -290,6 +302,7 @@ export interface RootRouteChildren {
   IntakeRoute: typeof IntakeRoute
   LoginRoute: typeof LoginRoute
   PerformanceReportRoute: typeof PerformanceReportRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   ApiDriveCustomerFilesRoute: typeof ApiDriveCustomerFilesRoute
   ApiDriveUploadRoute: typeof ApiDriveUploadRoute
   ApiImportCalendarRoute: typeof ApiImportCalendarRoute
@@ -308,6 +321,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/performance-report': {
       id: '/performance-report'
       path: '/performance-report'
@@ -476,6 +496,7 @@ const rootRouteChildren: RootRouteChildren = {
   IntakeRoute: IntakeRoute,
   LoginRoute: LoginRoute,
   PerformanceReportRoute: PerformanceReportRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   ApiDriveCustomerFilesRoute: ApiDriveCustomerFilesRoute,
   ApiDriveUploadRoute: ApiDriveUploadRoute,
   ApiImportCalendarRoute: ApiImportCalendarRoute,
