@@ -19,6 +19,7 @@ import { Route as ApiSyncCalendarRouteImport } from './routes/api/sync-calendar'
 import { Route as ApiSendReportRouteImport } from './routes/api/send-report'
 import { Route as ApiPrefillReportRouteImport } from './routes/api/prefill-report'
 import { Route as ApiImportCalendarRouteImport } from './routes/api/import-calendar'
+import { Route as ApiDriveUploadRouteImport } from './routes/api/drive-upload'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminNewRouteImport } from './routes/admin.new'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -73,6 +74,11 @@ const ApiImportCalendarRoute = ApiImportCalendarRouteImport.update({
   path: '/api/import-calendar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDriveUploadRoute = ApiDriveUploadRouteImport.update({
+  id: '/api/drive-upload',
+  path: '/api/drive-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/performance-report': typeof PerformanceReportRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/drive-upload': typeof ApiDriveUploadRoute
   '/api/import-calendar': typeof ApiImportCalendarRoute
   '/api/prefill-report': typeof ApiPrefillReportRoute
   '/api/send-report': typeof ApiSendReportRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/performance-report': typeof PerformanceReportRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/drive-upload': typeof ApiDriveUploadRoute
   '/api/import-calendar': typeof ApiImportCalendarRoute
   '/api/prefill-report': typeof ApiPrefillReportRoute
   '/api/send-report': typeof ApiSendReportRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/performance-report': typeof PerformanceReportRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/drive-upload': typeof ApiDriveUploadRoute
   '/api/import-calendar': typeof ApiImportCalendarRoute
   '/api/prefill-report': typeof ApiPrefillReportRoute
   '/api/send-report': typeof ApiSendReportRoute
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/performance-report'
     | '/admin/new'
     | '/admin/users'
+    | '/api/drive-upload'
     | '/api/import-calendar'
     | '/api/prefill-report'
     | '/api/send-report'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/performance-report'
     | '/admin/new'
     | '/admin/users'
+    | '/api/drive-upload'
     | '/api/import-calendar'
     | '/api/prefill-report'
     | '/api/send-report'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/performance-report'
     | '/admin/new'
     | '/admin/users'
+    | '/api/drive-upload'
     | '/api/import-calendar'
     | '/api/prefill-report'
     | '/api/send-report'
@@ -190,6 +202,7 @@ export interface RootRouteChildren {
   IntakeRoute: typeof IntakeRoute
   LoginRoute: typeof LoginRoute
   PerformanceReportRoute: typeof PerformanceReportRoute
+  ApiDriveUploadRoute: typeof ApiDriveUploadRoute
   ApiImportCalendarRoute: typeof ApiImportCalendarRoute
   ApiPrefillReportRoute: typeof ApiPrefillReportRoute
   ApiSendReportRoute: typeof ApiSendReportRoute
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiImportCalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/drive-upload': {
+      id: '/api/drive-upload'
+      path: '/api/drive-upload'
+      fullPath: '/api/drive-upload'
+      preLoaderRoute: typeof ApiDriveUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -312,6 +332,7 @@ const rootRouteChildren: RootRouteChildren = {
   IntakeRoute: IntakeRoute,
   LoginRoute: LoginRoute,
   PerformanceReportRoute: PerformanceReportRoute,
+  ApiDriveUploadRoute: ApiDriveUploadRoute,
   ApiImportCalendarRoute: ApiImportCalendarRoute,
   ApiPrefillReportRoute: ApiPrefillReportRoute,
   ApiSendReportRoute: ApiSendReportRoute,
@@ -322,3 +343,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
