@@ -251,8 +251,11 @@ function PerformanceReportPage() {
       toast.error("Could not submit report. Please try again.");
       return;
     }
+    if (jobId) {
+      await supabase.from("jobs").update({ status: "completed" }).eq("id", jobId);
+    }
     setSubmitted(true);
-    toast.success("Performance report submitted.");
+    toast.success(jobId ? "Performance report submitted. Job marked complete." : "Performance report submitted.");
     if (jobId) {
       setTimeout(() => navigate({ to: "/jobs/$id", params: { id: jobId } }), 800);
     }
