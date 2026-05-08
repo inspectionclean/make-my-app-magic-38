@@ -150,8 +150,13 @@ function JobDetail() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => setStatus("completed")}
-                  disabled={!data.hasReport}
+                  onClick={() => {
+                    if (!data.hasReport) {
+                      toast.error("Performance report must be completed to mark job complete!");
+                      return;
+                    }
+                    setStatus("completed");
+                  }}
                   title={!data.hasReport ? "Submit performance report first" : undefined}
                 >
                   Mark complete
