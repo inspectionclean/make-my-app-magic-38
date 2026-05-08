@@ -74,35 +74,25 @@ export async function buildSimplePdf(opts: {
   };
 
   const drawHeader = () => {
-    // Top brand bar
-    page.drawRectangle({ x: 0, y: pageH - 90, width: pageW, height: 90, color: brand });
-    page.drawText(sanitize(opts.title), { x: margin, y: pageH - 50, size: 22, font: bold, color: rgb(1, 1, 1) });
-    if (opts.subtitle) {
-      page.drawText(sanitize(opts.subtitle), { x: margin, y: pageH - 72, size: 11, font, color: rgb(0.86, 0.91, 0.97) });
-    }
-    // Logo in top-right corner, on a light pad so it stays legible against the brand bar
-    const padX = 8;
-    const padY = 6;
-    const padW = logoW + padX * 2;
-    const padH = logoH + padY * 2;
-    const padXPos = pageW - margin - padW + padX; // align pad's right edge with right margin
-    const padYPos = pageH - 18 - padH;
-    page.drawRectangle({
-      x: padXPos - padX,
-      y: padYPos - padY,
-      width: padW,
-      height: padH,
-      color: rgb(1, 1, 1),
-    });
+    // Logo in top-right corner
     page.drawImage(logo, {
       x: pageW - margin - logoW,
-      y: pageH - 18 - logoH,
+      y: pageH - 30 - logoH,
       width: logoW,
       height: logoH,
     });
-    // Accent stripe
-    page.drawRectangle({ x: 0, y: pageH - 96, width: pageW, height: 4, color: rgb(0.96, 0.66, 0.18) });
-    y = pageH - 120;
+    // Title (dark) on white background, left aligned
+    const titleY = pageH - 50;
+    page.drawText(sanitize(opts.title), { x: margin, y: titleY, size: 22, font: bold, color: brand });
+    if (opts.subtitle) {
+      page.drawText(sanitize(opts.subtitle), { x: margin, y: titleY - 20, size: 11, font, color: muted });
+    }
+    // Thin accent rule under the header area
+    const ruleY = pageH - 30 - logoH - 12;
+    const minRuleY = titleY - 34;
+    const headerRuleY = Math.min(ruleY, minRuleY);
+    page.drawLine({ start: { x: margin, y: headerRuleY }, end: { x: pageW - margin, y: headerRuleY }, thickness: 1, color: rgb(0.96, 0.66, 0.18) });
+    y = headerRuleY - 24;
   };
 
   const drawFooter = () => {
