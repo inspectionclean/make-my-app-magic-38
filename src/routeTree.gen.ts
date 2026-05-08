@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsIdRouteImport } from './routes/jobs.$id'
 import { Route as ApiSyncCalendarRouteImport } from './routes/api/sync-calendar'
 import { Route as ApiSendReportRouteImport } from './routes/api/send-report'
+import { Route as ApiImportCalendarRouteImport } from './routes/api/import-calendar'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminNewRouteImport } from './routes/admin.new'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -61,6 +62,11 @@ const ApiSendReportRoute = ApiSendReportRouteImport.update({
   path: '/api/send-report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiImportCalendarRoute = ApiImportCalendarRouteImport.update({
+  id: '/api/import-calendar',
+  path: '/api/import-calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/performance-report': typeof PerformanceReportRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/import-calendar': typeof ApiImportCalendarRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/jobs/$id': typeof JobsIdRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/performance-report': typeof PerformanceReportRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/import-calendar': typeof ApiImportCalendarRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/jobs/$id': typeof JobsIdRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/performance-report': typeof PerformanceReportRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/import-calendar': typeof ApiImportCalendarRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/jobs/$id': typeof JobsIdRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/performance-report'
     | '/admin/new'
     | '/admin/users'
+    | '/api/import-calendar'
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/jobs/$id'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/performance-report'
     | '/admin/new'
     | '/admin/users'
+    | '/api/import-calendar'
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/jobs/$id'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/performance-report'
     | '/admin/new'
     | '/admin/users'
+    | '/api/import-calendar'
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/jobs/$id'
@@ -166,6 +178,7 @@ export interface RootRouteChildren {
   IntakeRoute: typeof IntakeRoute
   LoginRoute: typeof LoginRoute
   PerformanceReportRoute: typeof PerformanceReportRoute
+  ApiImportCalendarRoute: typeof ApiImportCalendarRoute
   ApiSendReportRoute: typeof ApiSendReportRoute
   ApiSyncCalendarRoute: typeof ApiSyncCalendarRoute
   JobsIdRoute: typeof JobsIdRoute
@@ -230,6 +243,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSendReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/import-calendar': {
+      id: '/api/import-calendar'
+      path: '/api/import-calendar'
+      fullPath: '/api/import-calendar'
+      preLoaderRoute: typeof ApiImportCalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -272,6 +292,7 @@ const rootRouteChildren: RootRouteChildren = {
   IntakeRoute: IntakeRoute,
   LoginRoute: LoginRoute,
   PerformanceReportRoute: PerformanceReportRoute,
+  ApiImportCalendarRoute: ApiImportCalendarRoute,
   ApiSendReportRoute: ApiSendReportRoute,
   ApiSyncCalendarRoute: ApiSyncCalendarRoute,
   JobsIdRoute: JobsIdRoute,
