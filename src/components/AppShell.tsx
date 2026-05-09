@@ -23,13 +23,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background pb-20">
-      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+      <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border/60">
+        <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2.5">
+            <div
+              className="h-9 w-9 rounded-lg text-primary-foreground flex items-center justify-center shadow-sm"
+              style={{ backgroundImage: "var(--gradient-primary)" }}
+            >
               <Briefcase className="h-4 w-4" />
             </div>
-            <span className="font-semibold">FieldOps</span>
+            <span className="font-semibold tracking-tight">FieldOps</span>
           </Link>
           <Button variant="ghost" size="icon" onClick={() => signOut().then(() => navigate({ to: "/login" }))}>
             <LogOut className="h-4 w-4" />
