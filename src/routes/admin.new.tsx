@@ -114,24 +114,40 @@ function NewJobPage() {
     return Array.from(set);
   }, [customerSuggestions]);
 
-  const onCustomerNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setForm((f) => ({ ...f, customer_name: value }));
-    const match = (customerSuggestions ?? []).find(
-      (c) => c.name.toLowerCase() === value.trim().toLowerCase(),
-    );
-    if (match) {
-      setForm((f) => ({
-        ...f,
-        customer_name: match.name,
-        customer_email: f.customer_email || match.email || "",
-        customer_phone: f.customer_phone || match.phone || "",
-        address: f.address || match.address || "",
-        mgmt_email: f.mgmt_email || match.mgmt_email || "",
-        service_type: f.service_type || match.service_type || "",
-      }));
-    }
+  const [openField, setOpenField] = useState<null | "name" | "email" | "address">(null);
+
+  const applyCustomer = (match: NonNullable<typeof customerSuggestions>[number]) => {
+    setForm((f) => ({
+      ...f,
+      customer_name: match.name,
+      customer_email: match.email || f.customer_email,
+      customer_phone: match.phone || f.customer_phone,
+      address: match.address || f.address,
+      mgmt_email: match.mgmt_email || f.mgmt_email,
+      service_type: match.service_type || f.service_type,
+    }));
+    setOpenField(null);
   };
+
+  const filteredByName = useMemo(() => {
+    const q = form.customer_name.trim().toLowerCase();
+    const list = customerSuggestions ?? [];
+    if (!q) return list.slice(0, 8);
+    return list.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 8);
+  }, [form.customer_name, customerSuggestions]);
+
+  const filteredByEmail = useMemo(() => {
+    const q = form.customer_email.trim().toLowerCase();
+    if (!q) return emailSuggestions.slice(0, 8);
+    return emailSuggestions.filter((e) => e.toLowerCase().includes(q)).slice(0, 8);
+  }, [form.customer_email, emailSuggestions]);
+
+  const filteredByAddress = useMemo(() => {
+    const q = form.address.trim().toLowerCase();
+    if (!q) return addressSuggestions.slice(0, 8);
+    return addressSuggestions.filter((a) => a.toLowerCase().includes(q)).slice(0, 8);
+  }, [form.address, addressSuggestions]);
+
 
   const update = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
