@@ -51,10 +51,16 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-b from-background to-secondary">
+    <div
+      className="min-h-screen flex flex-col items-center justify-center px-4"
+      style={{ backgroundImage: "var(--gradient-subtle)" }}
+    >
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center gap-3 mb-8">
-          <div className="h-14 w-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
+          <div
+            className="h-14 w-14 rounded-2xl text-primary-foreground flex items-center justify-center"
+            style={{ backgroundImage: "var(--gradient-primary)", boxShadow: "var(--shadow-elegant)" }}
+          >
             <Briefcase className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">FieldOps</h1>
