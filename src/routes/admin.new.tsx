@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { geocodeAddress } from "@/lib/geocode";
 
@@ -52,6 +52,86 @@ function NewJobPage() {
       return (profiles ?? []).filter((p) => employeeIds.has(p.id));
     },
   });
+
+  // Predictive-text source: dedupe customers from previous jobs + intake submissions.
+  const { data: customerSuggestions } = useQuery({
+    queryKey: ["customer-suggestions"],
+    enabled: role === "admin",
+    queryFn: async () => {
+      const [{ data: jobs }, { data: intakes }] = await Promise.all([
+        supabase
+          .from("jobs")
+          .select("customer_name, customer_email, customer_phone, address, mgmt_email, service_type")
+          .order("created_at", { ascending: false })
+          .limit(500),
+        supabase
+          .from("intake_submissions")
+          .select("business_name, contact_name, email, phone, service_address, city, state, zip")
+          .order("created_at", { ascending: false })
+          .limit(500),
+      ]);
+      type Sug = {
+        name: string;
+        email?: string | null;
+        phone?: string | null;
+        address?: string | null;
+        mgmt_email?: string | null;
+        service_type?: string | null;
+      };
+      const map = new Map<string, Sug>();
+      (jobs ?? []).forEach((j) => {
+        const key = (j.customer_name || "").trim().toLowerCase();
+        if (!key || map.has(key)) return;
+        map.set(key, {
+          name: j.customer_name,
+          email: j.customer_email,
+          phone: j.customer_phone,
+          address: j.address,
+          mgmt_email: j.mgmt_email,
+          service_type: j.service_type,
+        });
+      });
+      (intakes ?? []).forEach((i) => {
+        const name = (i.business_name || i.contact_name || "").trim();
+        const key = name.toLowerCase();
+        if (!key || map.has(key)) return;
+        const addr = [i.service_address, i.city, i.state, i.zip].filter(Boolean).join(", ");
+        map.set(key, { name, email: i.email, phone: i.phone, address: addr });
+      });
+      return Array.from(map.values());
+    },
+  });
+
+  const addressSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    (customerSuggestions ?? []).forEach((c) => c.address && set.add(c.address));
+    return Array.from(set);
+  }, [customerSuggestions]);
+
+  const emailSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    (customerSuggestions ?? []).forEach((c) => c.email && set.add(c.email));
+    return Array.from(set);
+  }, [customerSuggestions]);
+
+  const onCustomerNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, customer_name: value }));
+    const match = (customerSuggestions ?? []).find(
+      (c) => c.name.toLowerCase() === value.trim().toLowerCase(),
+    );
+    if (match) {
+      setForm((f) => ({
+        ...f,
+        customer_name: match.name,
+        customer_email: f.customer_email || match.email || "",
+        customer_phone: f.customer_phone || match.phone || "",
+        address: f.address || match.address || "",
+        mgmt_email: f.mgmt_email || match.mgmt_email || "",
+        service_type: f.service_type || match.service_type || "",
+      }));
+    }
+  };
 
   const update = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -118,12 +198,41 @@ function NewJobPage() {
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="customer_name">Customer name *</Label>
-            <Input id="customer_name" value={form.customer_name} onChange={update("customer_name")} required />
+            <Input
+              id="customer_name"
+              list="customer-name-options"
+              autoComplete="off"
+              value={form.customer_name}
+              onChange={onCustomerNameChange}
+              required
+            />
+            <datalist id="customer-name-options">
+              {(customerSuggestions ?? []).map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.address ?? ""}
+                </option>
+              ))}
+            </datalist>
+            {customerSuggestions?.length ? (
+              <p className="text-xs text-muted-foreground">
+                Start typing — existing customers will auto-fill email, phone, and address.
+              </p>
+            ) : null}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="customer_email">Customer email</Label>
-              <Input id="customer_email" type="email" value={form.customer_email} onChange={update("customer_email")} />
+              <Input
+                id="customer_email"
+                type="email"
+                list="customer-email-options"
+                autoComplete="off"
+                value={form.customer_email}
+                onChange={update("customer_email")}
+              />
+              <datalist id="customer-email-options">
+                {emailSuggestions.map((e) => <option key={e} value={e} />)}
+              </datalist>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="customer_phone">Customer phone</Label>
@@ -132,7 +241,17 @@ function NewJobPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="address">Address *</Label>
-            <Input id="address" value={form.address} onChange={update("address")} required />
+            <Input
+              id="address"
+              list="address-options"
+              autoComplete="off"
+              value={form.address}
+              onChange={update("address")}
+              required
+            />
+            <datalist id="address-options">
+              {addressSuggestions.map((a) => <option key={a} value={a} />)}
+            </datalist>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="scheduled_at">Scheduled time *</Label>
