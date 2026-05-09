@@ -214,41 +214,70 @@ function NewJobPage() {
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="customer_name">Customer name *</Label>
-            <Input
-              id="customer_name"
-              list="customer-name-options"
-              autoComplete="off"
-              value={form.customer_name}
-              onChange={onCustomerNameChange}
-              required
-            />
-            <datalist id="customer-name-options">
-              {(customerSuggestions ?? []).map((c) => (
-                <option key={c.name} value={c.name}>
-                  {c.address ?? ""}
-                </option>
-              ))}
-            </datalist>
+            <div className="relative">
+              <Input
+                id="customer_name"
+                autoComplete="off"
+                value={form.customer_name}
+                onChange={update("customer_name")}
+                onFocus={() => setOpenField("name")}
+                onBlur={() => setTimeout(() => setOpenField((o) => (o === "name" ? null : o)), 150)}
+                required
+              />
+              {openField === "name" && filteredByName.length > 0 && (
+                <ul className="absolute z-20 mt-1 w-full max-h-64 overflow-auto rounded-md border bg-popover shadow-md">
+                  {filteredByName.map((c) => (
+                    <li key={c.name}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => applyCustomer(c)}
+                        className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <div className="font-medium text-sm">{c.name}</div>
+                        {c.address && <div className="text-xs text-muted-foreground truncate">{c.address}</div>}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             {customerSuggestions?.length ? (
               <p className="text-xs text-muted-foreground">
-                Start typing — existing customers will auto-fill email, phone, and address.
+                Pick an existing customer to auto-fill email, phone, and address.
               </p>
             ) : null}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="customer_email">Customer email</Label>
-              <Input
-                id="customer_email"
-                type="email"
-                list="customer-email-options"
-                autoComplete="off"
-                value={form.customer_email}
-                onChange={update("customer_email")}
-              />
-              <datalist id="customer-email-options">
-                {emailSuggestions.map((e) => <option key={e} value={e} />)}
-              </datalist>
+              <div className="relative">
+                <Input
+                  id="customer_email"
+                  type="email"
+                  autoComplete="off"
+                  value={form.customer_email}
+                  onChange={update("customer_email")}
+                  onFocus={() => setOpenField("email")}
+                  onBlur={() => setTimeout(() => setOpenField((o) => (o === "email" ? null : o)), 150)}
+                />
+                {openField === "email" && filteredByEmail.length > 0 && (
+                  <ul className="absolute z-20 mt-1 w-full max-h-64 overflow-auto rounded-md border bg-popover shadow-md">
+                    {filteredByEmail.map((e) => (
+                      <li key={e}>
+                        <button
+                          type="button"
+                          onMouseDown={(ev) => ev.preventDefault()}
+                          onClick={() => { setForm((f) => ({ ...f, customer_email: e })); setOpenField(null); }}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground truncate"
+                        >
+                          {e}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="customer_phone">Customer phone</Label>
@@ -257,17 +286,33 @@ function NewJobPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="address">Address *</Label>
-            <Input
-              id="address"
-              list="address-options"
-              autoComplete="off"
-              value={form.address}
-              onChange={update("address")}
-              required
-            />
-            <datalist id="address-options">
-              {addressSuggestions.map((a) => <option key={a} value={a} />)}
-            </datalist>
+            <div className="relative">
+              <Input
+                id="address"
+                autoComplete="off"
+                value={form.address}
+                onChange={update("address")}
+                onFocus={() => setOpenField("address")}
+                onBlur={() => setTimeout(() => setOpenField((o) => (o === "address" ? null : o)), 150)}
+                required
+              />
+              {openField === "address" && filteredByAddress.length > 0 && (
+                <ul className="absolute z-20 mt-1 w-full max-h-64 overflow-auto rounded-md border bg-popover shadow-md">
+                  {filteredByAddress.map((a) => (
+                    <li key={a}>
+                      <button
+                        type="button"
+                        onMouseDown={(ev) => ev.preventDefault()}
+                        onClick={() => { setForm((f) => ({ ...f, address: a })); setOpenField(null); }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground truncate"
+                      >
+                        {a}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="scheduled_at">Scheduled time *</Label>
