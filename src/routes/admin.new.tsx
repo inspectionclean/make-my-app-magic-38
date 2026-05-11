@@ -30,7 +30,10 @@ function NewJobPage() {
     assigned_to: "",
     mgmt_email: "",
     service_type: "",
+    po_number: "",
   });
+  const [filters, setFilters] = useState<{ size: string; qty: string }[]>([]);
+  const [lastCleanDate, setLastCleanDate] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && role && role !== "admin") navigate({ to: "/" });
@@ -66,7 +69,7 @@ function NewJobPage() {
           .limit(500),
         supabase
           .from("intake_submissions")
-          .select("business_name, contact_name, email, phone, service_address, city, state, zip")
+          .select("business_name, contact_name, email, phone, service_address, city, state, zip, filters, hoods, fans, duct_runs")
           .order("created_at", { ascending: false })
           .limit(500),
       ]);
@@ -116,7 +119,7 @@ function NewJobPage() {
 
   const [openField, setOpenField] = useState<null | "name" | "email" | "address">(null);
 
-  const applyCustomer = (match: NonNullable<typeof customerSuggestions>[number]) => {
+  const applyCustomer = async (match: NonNullable<typeof customerSuggestions>[number]) => {
     setForm((f) => ({
       ...f,
       customer_name: match.name,
@@ -127,6 +130,46 @@ function NewJobPage() {
       service_type: match.service_type || f.service_type,
     }));
     setOpenField(null);
+    // Fetch enriched details from server: intake fields + last clean date (incl. Google Calendar)
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const res = await fetch(`/api/customer-prefill?customer=${encodeURIComponent(match.name)}`, {
+        headers: { Authorization: `Bearer ${sess.session?.access_token ?? ""}` },
+      });
+      if (!res.ok) return;
+      const json = await res.json() as {
+        intake: any;
+        lastCleanDate: string | null;
+      };
+      setLastCleanDate(json.lastCleanDate);
+      const intake = json.intake;
+      if (intake) {
+        const addr = [intake.service_address, intake.city, intake.state, intake.zip].filter(Boolean).join(", ");
+        setForm((f) => ({
+          ...f,
+          customer_email: f.customer_email || intake.email || "",
+          customer_phone: f.customer_phone || intake.phone || "",
+          address: f.address || addr,
+          mgmt_email: f.mgmt_email || intake.email || "",
+        }));
+        if (Array.isArray(intake.filters) && intake.filters.length) {
+          setFilters(intake.filters.map((x: any) => ({ size: String(x.size ?? ""), qty: String(x.qty ?? "") })));
+        }
+      }
+    } catch (e) {
+      console.error("customer-prefill failed", e);
+    }
+  };
+
+  const updateFilter = (i: number, key: "size" | "qty", value: string) => {
+    setFilters((prev) => prev.map((f, idx) => (idx === i ? { ...f, [key]: value } : f)));
+  };
+  const addFilterRow = () => setFilters((prev) => [...prev, { size: "", qty: "" }]);
+  const removeFilterRow = (i: number) => setFilters((prev) => prev.filter((_, idx) => idx !== i));
+
+  const _legacyApplyShim = () => {};
+  void _legacyApplyShim;
+  // (the legacy one-shot applyCustomer was replaced above; nothing else to do)
   };
 
   const filteredByName = useMemo(() => {
