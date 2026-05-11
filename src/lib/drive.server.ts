@@ -24,7 +24,14 @@ async function gfetch(path: string, init: RequestInit = {}) {
   }
   return res;
 }
-
+function stripPhoneFromName(name: string): string {
+  return name
+    .replace(/#\+?[\d\s\-().]{7,}#/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    .replace(/[-–—,]+$/, "")
+    .trim();
+}
 function escapeQ(s: string) {
   return s.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
