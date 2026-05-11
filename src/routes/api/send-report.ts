@@ -103,6 +103,7 @@ export const Route = createFileRoute("/api/send-report")({
                 html,
                 text: `Service report for ${job.customer_name} on ${new Date(job.scheduled_at).toLocaleString()}.`,
                 label: "service-report",
+                purpose: "transactional",
                 idempotency_key: `service-report-${jobId}-${to}`,
               },
               { apiKey },
