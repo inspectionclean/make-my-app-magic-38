@@ -106,11 +106,12 @@ export const Route = createFileRoute("/api/send-report")({
                 purpose: "transactional",
                 idempotency_key: `service-report-${jobId}-${to}`,
               },
-              { apiKey },
+              { apiKey, sendUrl: process.env.LOVABLE_SEND_URL },
             );
           }
           await supabaseAdmin.from("jobs").update({ report_sent_at: new Date().toISOString() }).eq("id", jobId);
         } catch (e: any) {
+          console.error("Failed to send job report", e);
           return new Response(`Failed to send report: ${e.message}`, { status: 500 });
         }
 
