@@ -170,7 +170,6 @@ function NewJobPage() {
   const _legacyApplyShim = () => {};
   void _legacyApplyShim;
   // (the legacy one-shot applyCustomer was replaced above; nothing else to do)
-  };
 
   const filteredByName = useMemo(() => {
     const q = form.customer_name.trim().toLowerCase();
