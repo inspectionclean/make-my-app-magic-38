@@ -216,6 +216,10 @@ function NewJobPage() {
         assigned_to: form.assigned_to || null,
         mgmt_email: form.mgmt_email || null,
         service_type: form.service_type || null,
+        po_number: form.po_number || null,
+        filters: filters.filter((f) => f.size || f.qty).length
+          ? filters.filter((f) => f.size || f.qty)
+          : null,
         created_by: user?.id,
       })
       .select("id")
@@ -386,6 +390,29 @@ function NewJobPage() {
           <div className="space-y-1.5">
             <Label htmlFor="mgmt_email">Management email (for report)</Label>
             <Input id="mgmt_email" type="email" value={form.mgmt_email} onChange={update("mgmt_email")} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="po_number">PO Number</Label>
+            <Input id="po_number" value={form.po_number} onChange={update("po_number")} />
+          </div>
+          {lastCleanDate && (
+            <div className="text-sm text-muted-foreground">
+              Last clean on file: <span className="font-medium text-foreground">{lastCleanDate}</span>
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label>Filter sizes &amp; quantities</Label>
+            {filters.length === 0 && (
+              <p className="text-xs text-muted-foreground">None on file. Add rows below if needed.</p>
+            )}
+            {filters.map((f, i) => (
+              <div key={i} className="grid grid-cols-[1fr_100px_auto] gap-2 items-end">
+                <Input placeholder="Size (e.g. 20x25)" value={f.size} onChange={(e) => updateFilter(i, "size", e.target.value)} />
+                <Input placeholder="Qty" value={f.qty} onChange={(e) => updateFilter(i, "qty", e.target.value)} />
+                <Button type="button" variant="ghost" size="sm" onClick={() => removeFilterRow(i)}>×</Button>
+              </div>
+            ))}
+            <Button type="button" variant="outline" size="sm" onClick={addFilterRow}>+ Add filter</Button>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="description">Description / notes</Label>
