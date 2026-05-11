@@ -1,6 +1,38 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { sendLovableEmail } from "@lovable.dev/email-js";
+
+const SENDER_DOMAIN = "notify.inspectionclean.com";
+const FROM_DOMAIN = "inspectionclean.com";
+const SITE_NAME = "Inspection Clean";
+
+function generateToken(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function getOrCreateUnsubscribeToken(email: string): Promise<string | null> {
+  const normalized = email.toLowerCase();
+  const { data: existing } = await supabaseAdmin
+    .from("email_unsubscribe_tokens")
+    .select("token, used_at")
+    .eq("email", normalized)
+    .maybeSingle();
+  if (existing && !existing.used_at) return existing.token;
+  if (!existing) {
+    const token = generateToken();
+    await supabaseAdmin
+      .from("email_unsubscribe_tokens")
+      .upsert({ token, email: normalized }, { onConflict: "email", ignoreDuplicates: true });
+    const { data: stored } = await supabaseAdmin
+      .from("email_unsubscribe_tokens")
+      .select("token")
+      .eq("email", normalized)
+      .maybeSingle();
+    return stored?.token ?? null;
+  }
+  return null; // already used → suppressed
+}
 
 export const Route = createFileRoute("/api/send-report")({
   server: {
@@ -91,23 +123,44 @@ export const Route = createFileRoute("/api/send-report")({
         );
 
         try {
-          const apiKey = process.env.LOVABLE_API_KEY;
-          if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
           for (const to of recipients) {
-            await sendLovableEmail(
-              {
-                from: "Inspection Clean <service@notify.inspectionclean.com>",
-                sender_domain: "notify.inspectionclean.com",
+            const normalized = to.toLowerCase();
+            const { data: suppressed } = await supabaseAdmin
+              .from("suppressed_emails").select("id").eq("email", normalized).maybeSingle();
+            if (suppressed) {
+              console.log("Skipping suppressed recipient", { recipient: normalized });
+              continue;
+            }
+            const unsubscribeToken = await getOrCreateUnsubscribeToken(to);
+            if (!unsubscribeToken) {
+              console.log("Skipping recipient (unsubscribed)", { recipient: normalized });
+              continue;
+            }
+            const messageId = crypto.randomUUID();
+            await supabaseAdmin.from("email_send_log").insert({
+              message_id: messageId,
+              template_name: "service-report",
+              recipient_email: to,
+              status: "pending",
+            });
+            const { error: enqErr } = await supabaseAdmin.rpc("enqueue_email", {
+              queue_name: "transactional_emails",
+              payload: {
+                message_id: messageId,
                 to,
-              subject: `Performance report — ${job.customer_name}`,
+                from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+                sender_domain: SENDER_DOMAIN,
+                subject: `Performance report — ${job.customer_name}`,
                 html,
                 text: `Service report for ${job.customer_name} on ${new Date(job.scheduled_at).toLocaleString()}.`,
-                label: "service-report",
                 purpose: "transactional",
+                label: "service-report",
                 idempotency_key: `service-report-${jobId}-${to}`,
+                unsubscribe_token: unsubscribeToken,
+                queued_at: new Date().toISOString(),
               },
-              { apiKey, sendUrl: process.env.LOVABLE_SEND_URL },
-            );
+            });
+            if (enqErr) throw new Error(`Failed to enqueue email: ${enqErr.message}`);
           }
           await supabaseAdmin.from("jobs").update({ report_sent_at: new Date().toISOString() }).eq("id", jobId);
         } catch (e: any) {
