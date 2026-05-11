@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Navigation, Phone, Mail, Send, User, ClipboardCheck, MapPinned, FileText, ExternalLink } from "lucide-react";
+import { ArrowLeft, MapPin, Navigation, Phone, Mail, Send, User, ClipboardCheck, MapPinned, FileText, ExternalLink, Ban } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { JobPhotos } from "@/components/JobPhotos";
 import { TimeTracker } from "@/components/TimeTracker";
@@ -30,6 +31,9 @@ function JobDetail() {
   const [noteText, setNoteText] = useState("");
   const [sending, setSending] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["job", id],
@@ -122,6 +126,35 @@ function JobDetail() {
     }
   };
 
+  const submitCancel = async () => {
+    if (!cancelReason.trim()) {
+      toast.error("Please enter a reason");
+      return;
+    }
+    setCancelling(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const res = await fetch("/api/cancel-job", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sess.session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({ jobId: id, reason: cancelReason.trim() }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      toast.success("Job cancelled — service team notified");
+      setCancelOpen(false);
+      setCancelReason("");
+      qc.invalidateQueries({ queryKey: ["job", id] });
+      qc.invalidateQueries({ queryKey: ["my-jobs"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to cancel");
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const fixCoordinates = async () => {
     if (!data?.job) return;
     setGeocoding(true);
@@ -178,6 +211,25 @@ function JobDetail() {
         </div>
         <p className="text-sm text-muted-foreground">{format(new Date(j.scheduled_at), "EEE, MMM d • h:mm a")}</p>
         {j.description && <p className="text-sm mt-2">{j.description}</p>}
+        {(j as any).po_number && (
+          <p className="text-sm mt-2"><span className="font-medium">PO:</span> {(j as any).po_number}</p>
+        )}
+        {Array.isArray((j as any).filters) && (j as any).filters.length > 0 && (
+          <div className="text-sm mt-2">
+            <p className="font-medium mb-1">Filters</p>
+            <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
+              {((j as any).filters as Array<{ size: string; qty: string }>).map((f, i) => (
+                <li key={i}>{f.size}{f.qty ? ` × ${f.qty}` : ""}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {j.status === "cancelled" && (j as any).cancellation_reason && (
+          <div className="text-sm mt-3 p-2 rounded border border-destructive/40 bg-destructive/10">
+            <p className="font-medium text-destructive mb-1">Cancelled</p>
+            <p className="whitespace-pre-wrap">{(j as any).cancellation_reason}</p>
+          </div>
+        )}
         <div className="space-y-2 mt-3 text-sm">
           <div className="flex items-start gap-2">
             <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
@@ -339,6 +391,38 @@ function JobDetail() {
           </p>
         )}
       </div>
+
+      {j.status !== "cancelled" && j.status !== "completed" && (
+        <div className="mt-4">
+          <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full text-destructive border-destructive/40 hover:bg-destructive/10">
+                <Ban className="h-4 w-4 mr-2" /> Unable to perform job
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Cancel job &amp; request reschedule</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                This will cancel the job and email service@inspectionclean.com so it can be rescheduled.
+              </p>
+              <Textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Reason for cancellation (required)"
+                rows={4}
+              />
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setCancelOpen(false)} disabled={cancelling}>Back</Button>
+                <Button variant="destructive" onClick={submitCancel} disabled={cancelling || !cancelReason.trim()}>
+                  {cancelling ? "Cancelling…" : "Cancel job & notify"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
     </AppShell>
   );
 }

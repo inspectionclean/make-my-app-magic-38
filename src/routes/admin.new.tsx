@@ -30,7 +30,10 @@ function NewJobPage() {
     assigned_to: "",
     mgmt_email: "",
     service_type: "",
+    po_number: "",
   });
+  const [filters, setFilters] = useState<{ size: string; qty: string }[]>([]);
+  const [lastCleanDate, setLastCleanDate] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && role && role !== "admin") navigate({ to: "/" });
@@ -66,7 +69,7 @@ function NewJobPage() {
           .limit(500),
         supabase
           .from("intake_submissions")
-          .select("business_name, contact_name, email, phone, service_address, city, state, zip")
+          .select("business_name, contact_name, email, phone, service_address, city, state, zip, filters, hoods, fans, duct_runs")
           .order("created_at", { ascending: false })
           .limit(500),
       ]);
@@ -116,7 +119,7 @@ function NewJobPage() {
 
   const [openField, setOpenField] = useState<null | "name" | "email" | "address">(null);
 
-  const applyCustomer = (match: NonNullable<typeof customerSuggestions>[number]) => {
+  const applyCustomer = async (match: NonNullable<typeof customerSuggestions>[number]) => {
     setForm((f) => ({
       ...f,
       customer_name: match.name,
@@ -127,7 +130,46 @@ function NewJobPage() {
       service_type: match.service_type || f.service_type,
     }));
     setOpenField(null);
+    // Fetch enriched details from server: intake fields + last clean date (incl. Google Calendar)
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const res = await fetch(`/api/customer-prefill?customer=${encodeURIComponent(match.name)}`, {
+        headers: { Authorization: `Bearer ${sess.session?.access_token ?? ""}` },
+      });
+      if (!res.ok) return;
+      const json = await res.json() as {
+        intake: any;
+        lastCleanDate: string | null;
+      };
+      setLastCleanDate(json.lastCleanDate);
+      const intake = json.intake;
+      if (intake) {
+        const addr = [intake.service_address, intake.city, intake.state, intake.zip].filter(Boolean).join(", ");
+        setForm((f) => ({
+          ...f,
+          customer_email: f.customer_email || intake.email || "",
+          customer_phone: f.customer_phone || intake.phone || "",
+          address: f.address || addr,
+          mgmt_email: f.mgmt_email || intake.email || "",
+        }));
+        if (Array.isArray(intake.filters) && intake.filters.length) {
+          setFilters(intake.filters.map((x: any) => ({ size: String(x.size ?? ""), qty: String(x.qty ?? "") })));
+        }
+      }
+    } catch (e) {
+      console.error("customer-prefill failed", e);
+    }
   };
+
+  const updateFilter = (i: number, key: "size" | "qty", value: string) => {
+    setFilters((prev) => prev.map((f, idx) => (idx === i ? { ...f, [key]: value } : f)));
+  };
+  const addFilterRow = () => setFilters((prev) => [...prev, { size: "", qty: "" }]);
+  const removeFilterRow = (i: number) => setFilters((prev) => prev.filter((_, idx) => idx !== i));
+
+  const _legacyApplyShim = () => {};
+  void _legacyApplyShim;
+  // (the legacy one-shot applyCustomer was replaced above; nothing else to do)
 
   const filteredByName = useMemo(() => {
     const q = form.customer_name.trim().toLowerCase();
@@ -174,6 +216,10 @@ function NewJobPage() {
         assigned_to: form.assigned_to || null,
         mgmt_email: form.mgmt_email || null,
         service_type: form.service_type || null,
+        po_number: form.po_number || null,
+        filters: filters.filter((f) => f.size || f.qty).length
+          ? filters.filter((f) => f.size || f.qty)
+          : null,
         created_by: user?.id,
       })
       .select("id")
@@ -344,6 +390,29 @@ function NewJobPage() {
           <div className="space-y-1.5">
             <Label htmlFor="mgmt_email">Management email (for report)</Label>
             <Input id="mgmt_email" type="email" value={form.mgmt_email} onChange={update("mgmt_email")} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="po_number">PO Number</Label>
+            <Input id="po_number" value={form.po_number} onChange={update("po_number")} />
+          </div>
+          {lastCleanDate && (
+            <div className="text-sm text-muted-foreground">
+              Last clean on file: <span className="font-medium text-foreground">{lastCleanDate}</span>
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label>Filter sizes &amp; quantities</Label>
+            {filters.length === 0 && (
+              <p className="text-xs text-muted-foreground">None on file. Add rows below if needed.</p>
+            )}
+            {filters.map((f, i) => (
+              <div key={i} className="grid grid-cols-[1fr_100px_auto] gap-2 items-end">
+                <Input placeholder="Size (e.g. 20x25)" value={f.size} onChange={(e) => updateFilter(i, "size", e.target.value)} />
+                <Input placeholder="Qty" value={f.qty} onChange={(e) => updateFilter(i, "qty", e.target.value)} />
+                <Button type="button" variant="ghost" size="sm" onClick={() => removeFilterRow(i)}>×</Button>
+              </div>
+            ))}
+            <Button type="button" variant="outline" size="sm" onClick={addFilterRow}>+ Add filter</Button>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="description">Description / notes</Label>
