@@ -37,6 +37,16 @@ async function getOrCreateUnsubscribeToken(email: string): Promise<string | null
   return null; // already used → suppressed
 }
 
+/** Strip SMS phone tags from customer name for Drive lookups and email subjects */
+function stripPhone(name: string): string {
+  return name
+    .replace(/#\+?[\d\s\-().]{7,}#/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    .replace(/[-–—,]+$/, "")
+    .trim();
+}
+
 export const Route = createFileRoute("/api/send-report")({
   server: {
     handlers: {
@@ -51,13 +61,48 @@ export const Route = createFileRoute("/api/send-report")({
         const { data: job } = await supabaseAdmin.from("jobs").select("*").eq("id", jobId).maybeSingle();
         if (!job) return new Response("Job not found", { status: 404 });
 
-        const { data: report } = await supabaseAdmin
+        // ---- Find the best performance report ----
+        // First try: report directly linked to this job
+        let { data: report } = await supabaseAdmin
           .from("performance_reports")
           .select("*")
           .eq("job_id", jobId)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        // Second try: if no linked report (duplicate job bug), find the most recent
+        // report for this customer by business name, submitted within 24 hours of
+        // the job's scheduled time.
+        if (!report && job.customer_name) {
+          const cleanName = stripPhone(job.customer_name).toLowerCase();
+          const scheduledAt = new Date(job.scheduled_at);
+          const windowStart = new Date(scheduledAt.getTime() - 24 * 60 * 60 * 1000).toISOString();
+          const windowEnd = new Date(scheduledAt.getTime() + 24 * 60 * 60 * 1000).toISOString();
+
+          const { data: candidates } = await supabaseAdmin
+            .from("performance_reports")
+            .select("*")
+            .gte("created_at", windowStart)
+            .lte("created_at", windowEnd)
+            .order("created_at", { ascending: false })
+            .limit(20);
+
+          // Find the candidate whose business_name most closely matches the job customer
+          report = (candidates ?? []).find((r) =>
+            r.business_name?.toLowerCase().includes(cleanName) ||
+            cleanName.includes(r.business_name?.toLowerCase() ?? "")
+          ) ?? null;
+
+          // If found via fallback, link it to this job so future sends work correctly
+          if (report) {
+            await supabaseAdmin
+              .from("performance_reports")
+              .update({ job_id: jobId })
+              .eq("id", report.id);
+          }
+        }
+
         if (!report) {
           return new Response("No performance report submitted for this job", { status: 400 });
         }
@@ -110,7 +155,7 @@ export const Route = createFileRoute("/api/send-report")({
               ["PO Number", (job as any).po_number ?? ""],
             ].filter(([, v]) => v) as [string, string][] },
             { heading: "Service", rows: [
-              ["Service Date", report.service_date],
+              ["Service Date", report.service_date ?? ""],
               ["Arrival", report.arrival_time ?? ""],
               ["Completion", report.completion_time ?? ""],
               ["Technicians", report.technicians ?? ""],
@@ -169,7 +214,10 @@ export const Route = createFileRoute("/api/send-report")({
 
         // ---- Upload PDF to the customer's Drive folder (best-effort) ----
         try {
-          const folderId = await getOrCreateCustomerFolder(job.customer_name);
+          // Strip phone tags so job names like "Roma's #+18645551234#"
+          // find the correct Drive folder instead of creating a duplicate
+          const driveCustomerName = stripPhone(job.customer_name);
+          const folderId = await getOrCreateCustomerFolder(driveCustomerName);
           await uploadFile({
             folderId,
             name: `Performance Report - ${report.service_date}.pdf`,
@@ -180,6 +228,7 @@ export const Route = createFileRoute("/api/send-report")({
           console.error("Drive upload of report PDF failed", e);
         }
 
+        const cleanSubjectName = stripPhone(job.customer_name);
         const logoImg = `<img src="data:image/png;base64,${LOGO_PNG_BASE64}" alt="Inspection Clean" style="height:64px;display:block;margin:0 auto 12px" />`;
         const pdfButton = pdfUrl
           ? `<p style="text-align:center;margin:18px 0"><a href="${pdfUrl}" style="display:inline-block;background:#0f5ba1;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600">Download PDF Report</a></p>`
@@ -189,7 +238,7 @@ export const Route = createFileRoute("/api/send-report")({
           <div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;padding:20px;color:#222">
             ${logoImg}
             <h1 style="font-size:22px;margin:0 0 4px">Hood Cleaning Performance Report</h1>
-            <p style="color:#666;margin:0 0 16px">${escapeHtml(report.business_name)} — ${escapeHtml(report.service_date)}</p>
+            <p style="color:#666;margin:0 0 16px">${escapeHtml(report.business_name)} — ${escapeHtml(report.service_date ?? "")}</p>
             ${pdfButton}
 
             ${section("Customer", row("Business", report.business_name) + row("Address", `${report.address}, ${report.city}, ${report.state} ${report.zip}`) + row("Contact", report.contact_name) + row("Phone", report.phone) + row("Email", report.email))}
@@ -245,9 +294,10 @@ export const Route = createFileRoute("/api/send-report")({
                 to,
                 from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
                 sender_domain: SENDER_DOMAIN,
-                subject: `Performance report — ${job.customer_name}`,
+                // Clean subject — no phone number tags visible to customer
+                subject: `Performance report — ${cleanSubjectName}`,
                 html,
-                text: `Service report for ${job.customer_name} on ${new Date(job.scheduled_at).toLocaleString()}.`,
+                text: `Service report for ${cleanSubjectName} on ${new Date(job.scheduled_at).toLocaleString()}.`,
                 purpose: "transactional",
                 label: "service-report",
                 idempotency_key: `service-report-${jobId}-${to}`,
@@ -270,5 +320,5 @@ export const Route = createFileRoute("/api/send-report")({
 });
 
 function escapeHtml(s: string) {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
