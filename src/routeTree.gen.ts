@@ -23,6 +23,7 @@ import { Route as ApiPrefillReportRouteImport } from './routes/api/prefill-repor
 import { Route as ApiImportCalendarRouteImport } from './routes/api/import-calendar'
 import { Route as ApiDriveUploadRouteImport } from './routes/api/drive-upload'
 import { Route as ApiDriveCustomerFilesRouteImport } from './routes/api/drive-customer-files'
+import { Route as ApiCancelJobRouteImport } from './routes/api/cancel-job'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminNewRouteImport } from './routes/admin.new'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
@@ -102,6 +103,11 @@ const ApiDriveCustomerFilesRoute = ApiDriveCustomerFilesRouteImport.update({
   path: '/api/drive-customer-files',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCancelJobRoute = ApiCancelJobRouteImport.update({
+  id: '/api/cancel-job',
+  path: '/api/cancel-job',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribe': typeof UnsubscribeRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/cancel-job': typeof ApiCancelJobRoute
   '/api/drive-customer-files': typeof ApiDriveCustomerFilesRoute
   '/api/drive-upload': typeof ApiDriveUploadRoute
   '/api/import-calendar': typeof ApiImportCalendarRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/cancel-job': typeof ApiCancelJobRoute
   '/api/drive-customer-files': typeof ApiDriveCustomerFilesRoute
   '/api/drive-upload': typeof ApiDriveUploadRoute
   '/api/import-calendar': typeof ApiImportCalendarRoute
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/unsubscribe': typeof UnsubscribeRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/cancel-job': typeof ApiCancelJobRoute
   '/api/drive-customer-files': typeof ApiDriveCustomerFilesRoute
   '/api/drive-upload': typeof ApiDriveUploadRoute
   '/api/import-calendar': typeof ApiImportCalendarRoute
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/admin/new'
     | '/admin/users'
+    | '/api/cancel-job'
     | '/api/drive-customer-files'
     | '/api/drive-upload'
     | '/api/import-calendar'
@@ -256,6 +266,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/admin/new'
     | '/admin/users'
+    | '/api/cancel-job'
     | '/api/drive-customer-files'
     | '/api/drive-upload'
     | '/api/import-calendar'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/admin/new'
     | '/admin/users'
+    | '/api/cancel-job'
     | '/api/drive-customer-files'
     | '/api/drive-upload'
     | '/api/import-calendar'
@@ -303,6 +315,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PerformanceReportRoute: typeof PerformanceReportRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
+  ApiCancelJobRoute: typeof ApiCancelJobRoute
   ApiDriveCustomerFilesRoute: typeof ApiDriveCustomerFilesRoute
   ApiDriveUploadRoute: typeof ApiDriveUploadRoute
   ApiImportCalendarRoute: typeof ApiImportCalendarRoute
@@ -419,6 +432,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDriveCustomerFilesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cancel-job': {
+      id: '/api/cancel-job'
+      path: '/api/cancel-job'
+      fullPath: '/api/cancel-job'
+      preLoaderRoute: typeof ApiCancelJobRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -497,6 +517,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PerformanceReportRoute: PerformanceReportRoute,
   UnsubscribeRoute: UnsubscribeRoute,
+  ApiCancelJobRoute: ApiCancelJobRoute,
   ApiDriveCustomerFilesRoute: ApiDriveCustomerFilesRoute,
   ApiDriveUploadRoute: ApiDriveUploadRoute,
   ApiImportCalendarRoute: ApiImportCalendarRoute,
