@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { buildSimplePdf } from "@/lib/pdf.server";
+import { getOrCreateCustomerFolder, uploadFile } from "@/lib/drive.server";
+import { LOGO_PNG_BASE64 } from "@/lib/logo-data";
 
 const SENDER_DOMAIN = "notify.inspectionclean.com";
 const FROM_DOMAIN = "inspectionclean.com";
@@ -92,10 +95,102 @@ export const Route = createFileRoute("/api/send-report")({
         const section = (title: string, rows: string) =>
           rows ? `<h3 style="margin:18px 0 6px">${escapeHtml(title)}</h3><table style="width:100%;border-collapse:collapse;font-size:14px">${rows}</table>` : "";
 
+        // ---- Build branded PDF ----
+        const pdfBytes = await buildSimplePdf({
+          title: "Hood Cleaning Performance Report",
+          subtitle: `${report.business_name} — ${report.service_date}`,
+          footer: "Inspection Clean  •  service@inspectionclean.com",
+          sections: [
+            { heading: "Customer", rows: [
+              ["Business", report.business_name],
+              ["Address", `${report.address}, ${report.city}, ${report.state} ${report.zip}`],
+              ["Contact", report.contact_name ?? ""],
+              ["Phone", report.phone ?? ""],
+              ["Email", report.email ?? ""],
+              ["PO Number", (job as any).po_number ?? ""],
+            ].filter(([, v]) => v) as [string, string][] },
+            { heading: "Service", rows: [
+              ["Service Date", report.service_date],
+              ["Arrival", report.arrival_time ?? ""],
+              ["Completion", report.completion_time ?? ""],
+              ["Technicians", report.technicians ?? ""],
+              ["Service Type", report.service_type ?? ""],
+              ["Previous Cleaning", report.previous_cleaning_date ?? ""],
+            ].filter(([, v]) => v) as [string, string][] },
+            { heading: "System", rows: [
+              ["Hoods", String(report.hoods ?? "")],
+              ["Exhaust Fans", String(report.fans ?? "")],
+              ["Duct Runs", String(report.duct_runs ?? "")],
+              ["Fire Suppression", report.fire_suppression == null ? "" : report.fire_suppression ? "Yes" : "No"],
+              ["Access Panels", report.access_panels == null ? "" : report.access_panels ? "Yes" : "No"],
+              ["Roof Access", report.roof_access == null ? "" : report.roof_access ? "Yes" : "No"],
+            ].filter(([, v]) => v) as [string, string][] },
+            { heading: "Areas Cleaned", rows: [
+              ["Areas", (report.areas_cleaned ?? []).join(", ")],
+              ["Other", report.other_cleaned ?? ""],
+            ].filter(([, v]) => v) as [string, string][] },
+            { heading: "Performance Results", rows: [
+              ["Condition Before", report.condition_before ?? ""],
+              ["Condition After", report.condition_after ?? ""],
+              ["Grease Level", report.grease_level ?? ""],
+              ["Airflow Check", report.airflow_check ?? ""],
+              ["Fan Check", report.fan_check ?? ""],
+              ["Filter Condition", report.filter_condition ?? ""],
+              ["Access Panel Condition", report.access_panel_condition ?? ""],
+            ].filter(([, v]) => v) as [string, string][] },
+            {
+              heading: "Findings & Recommendations",
+              paragraphs: [report.findings, report.recommendations].filter(Boolean) as string[],
+              rows: [
+                ["Recommended Items", (report.recommendation_items ?? []).join(", ")],
+              ].filter(([, v]) => v) as [string, string][],
+            },
+            { heading: "Sign-Off", rows: [
+              ["Technician", report.technician_name ?? ""],
+              ["Customer Representative", report.customer_rep ?? ""],
+              ["Signed", report.signature_date ?? ""],
+            ].filter(([, v]) => v) as [string, string][] },
+          ],
+        });
+
+        // ---- Save PDF to Supabase storage and create signed download URL ----
+        const pdfFileName = `report-${jobId}-${Date.now()}.pdf`;
+        const pdfStoragePath = `reports/${jobId}/${pdfFileName}`;
+        await supabaseAdmin.storage
+          .from("job-photos")
+          .upload(pdfStoragePath, pdfBytes, {
+            contentType: "application/pdf",
+            upsert: true,
+          });
+        const { data: signed } = await supabaseAdmin.storage
+          .from("job-photos")
+          .createSignedUrl(pdfStoragePath, 60 * 60 * 24 * 30);
+        const pdfUrl = signed?.signedUrl ?? null;
+
+        // ---- Upload PDF to the customer's Drive folder (best-effort) ----
+        try {
+          const folderId = await getOrCreateCustomerFolder(job.customer_name);
+          await uploadFile({
+            folderId,
+            name: `Performance Report - ${report.service_date}.pdf`,
+            mimeType: "application/pdf",
+            content: pdfBytes,
+          });
+        } catch (e) {
+          console.error("Drive upload of report PDF failed", e);
+        }
+
+        const logoImg = `<img src="data:image/png;base64,${LOGO_PNG_BASE64}" alt="Inspection Clean" style="height:64px;display:block;margin:0 auto 12px" />`;
+        const pdfButton = pdfUrl
+          ? `<p style="text-align:center;margin:18px 0"><a href="${pdfUrl}" style="display:inline-block;background:#0f5ba1;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600">Download PDF Report</a></p>`
+          : "";
+
         const html = `
           <div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;padding:20px;color:#222">
+            ${logoImg}
             <h1 style="font-size:22px;margin:0 0 4px">Hood Cleaning Performance Report</h1>
             <p style="color:#666;margin:0 0 16px">${escapeHtml(report.business_name)} — ${escapeHtml(report.service_date)}</p>
+            ${pdfButton}
 
             ${section("Customer", row("Business", report.business_name) + row("Address", `${report.address}, ${report.city}, ${report.state} ${report.zip}`) + row("Contact", report.contact_name) + row("Phone", report.phone) + row("Email", report.email))}
 
