@@ -286,17 +286,21 @@ export type Database = {
         Row: {
           address: string
           assigned_to: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
           created_at: string
           created_by: string | null
           customer_email: string | null
           customer_name: string
           customer_phone: string | null
           description: string | null
+          filters: Json | null
           google_event_id: string | null
           id: string
           lat: number | null
           lng: number | null
           mgmt_email: string | null
+          po_number: string | null
           report_sent_at: string | null
           scheduled_at: string
           service_type: string | null
@@ -306,17 +310,21 @@ export type Database = {
         Insert: {
           address: string
           assigned_to?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           created_at?: string
           created_by?: string | null
           customer_email?: string | null
           customer_name: string
           customer_phone?: string | null
           description?: string | null
+          filters?: Json | null
           google_event_id?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
           mgmt_email?: string | null
+          po_number?: string | null
           report_sent_at?: string | null
           scheduled_at: string
           service_type?: string | null
@@ -326,17 +334,21 @@ export type Database = {
         Update: {
           address?: string
           assigned_to?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           created_at?: string
           created_by?: string | null
           customer_email?: string | null
           customer_name?: string
           customer_phone?: string | null
           description?: string | null
+          filters?: Json | null
           google_event_id?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
           mgmt_email?: string | null
+          po_number?: string | null
           report_sent_at?: string | null
           scheduled_at?: string
           service_type?: string | null
