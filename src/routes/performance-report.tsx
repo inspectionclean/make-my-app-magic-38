@@ -276,7 +276,7 @@ function PerformanceReportPage() {
         body: JSON.stringify({
           kind: "report",
           customerName: parsed.data.business_name,
-          data: { ...parsed.data, service_date: raw.service_date },
+          data: { ...parsed.data, service_date: raw.service_date, arrival_time: raw.arrival_time || null, completion_time: raw.completion_time || null, technicians: raw.technicians || null, service_type: serviceType || null, hoods: raw.hoods || null, fans: raw.fans || null, duct_runs: raw.duct_runs || null, fire_suppression: fireSuppression || null, access_panels: accessPanels || null, roof_access: roofAccess || null, areas_cleaned: areas.length ? areas : null, other_cleaned: raw.other_cleaned || null, condition_before: raw.condition_before || null, condition_after: raw.condition_after || null, grease_level: greaseLevel || null, airflow_check: airflowCheck || null, fan_check: fanCheck || null, filter_condition: filterCondition || null, access_panel_condition: accessPanelCondition || null, findings: raw.findings || null, recommendations: raw.recommendations || null, recommendation_items: recItems.length ? recItems : null, photos: photos.length ? photos : null, technician_name: raw.technician_name || null, customer_rep: raw.customer_rep || null, signature_date: raw.signature_date },
           baseName: `report-${raw.service_date || new Date().toISOString().slice(0, 10)}`,
         }),
       }).catch(() => {});
