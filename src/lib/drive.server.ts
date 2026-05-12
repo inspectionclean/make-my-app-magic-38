@@ -30,13 +30,26 @@ async function gfetch(path: string, init: RequestInit = {}) {
  * Job names like "Roma's Family Restaurant #+18645551234#" become "Roma's Family Restaurant".
  * Also strips trailing/leading whitespace and punctuation left behind.
  */
-function stripPhoneFromName(name: string): string {
+function normalizeName(name: string): string {
   return name
     .replace(/#\+?[\d\s\-().]{7,}#/g, "")
+    .replace(/^(confirmed|pending|maybe)\s*:?\s*/i, "")
+    .split(/\s*\/\s*/)[0]
     .replace(/\s{2,}/g, " ")
     .trim()
-    .replace(/[-–—,]+$/, "")
+    .replace(/[-–—,:.]+$/, "")
     .trim();
+}
+
+const CUSTOMER_NAME_MAP: Record<string, string> = {
+  "mullen's irish pub": "Mullin's Irish Pub",
+  "mullin's irish pub": "Mullin's Irish Pub",
+};
+
+function normalizeName(name: string): string {
+  const cleaned = normalizeName(name).toLowerCase();
+  return CUSTOMER_NAME_MAP[cleaned] ?? normalizeName(name);
+}
 }
 
 function escapeQ(s: string) {
@@ -88,7 +101,7 @@ async function findCustomerFolderUnderActive(customerName: string): Promise<stri
   const active = await findActiveCustomersFolder();
   if (!active) return null;
   // Strip phone tags before searching
-  const safe = stripPhoneFromName(customerName);
+  const safe = normalizeName(customerName);
   if (!safe) return null;
 
   // Search for folders whose name matches OR contains the customer name,
@@ -118,7 +131,7 @@ async function findCustomerFolderUnderActive(customerName: string): Promise<stri
 
 export async function getOrCreateCustomerFolder(customerName: string): Promise<string> {
   // Strip phone tags so "Roma's #+18645551234#" finds "Roma's Family Restaurant - Woodruff"
-  const safe = stripPhoneFromName(customerName) || "Unknown Customer";
+  const safe = normalizeName(customerName) || "Unknown Customer";
 
   // Prefer existing folder under My Drive / Active Customers / {month} / {customer}
   const existing = await findCustomerFolderUnderActive(safe);
@@ -170,7 +183,7 @@ export async function uploadFile(opts: {
 
 export async function listCustomerFiles(customerName: string) {
   // Strip phone tags before folder lookup
-  const safe = stripPhoneFromName(customerName) || "Unknown Customer";
+  const safe = normalizeName(customerName) || "Unknown Customer";
   let folder = await findCustomerFolderUnderActive(safe);
   if (!folder) {
     const active = await findActiveCustomersFolder();
@@ -278,7 +291,7 @@ export async function scheduleNextDueMonth(opts: {
   if (!months) return null;
 
   // Strip phone tags before folder lookup
-  const folderId = await findCustomerFolderUnderActive(stripPhoneFromName(opts.customerName));
+  const folderId = await findCustomerFolderUnderActive(normalizeName(opts.customerName));
   if (!folderId) return null;
 
   // Look up the folder's current parent (a month folder under Active Customers)
