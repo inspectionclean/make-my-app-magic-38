@@ -46,9 +46,9 @@ const CUSTOMER_NAME_MAP: Record<string, string> = {
   "mullin's irish pub": "Mullin's Irish Pub",
 };
 
-function normalizeName(name: string): string {
-  const cleaned = normalizeName(name).toLowerCase();
-  return CUSTOMER_NAME_MAP[cleaned] ?? normalizeName(name);
+function canonicalCustomerName(name: string): string {
+  const cleaned = normalizeName(name);
+  return CUSTOMER_NAME_MAP[cleaned.toLowerCase()] ?? cleaned;
 }
 
 function escapeQ(s: string) {
