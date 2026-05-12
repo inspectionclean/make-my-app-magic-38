@@ -50,7 +50,6 @@ function normalizeName(name: string): string {
   const cleaned = normalizeName(name).toLowerCase();
   return CUSTOMER_NAME_MAP[cleaned] ?? normalizeName(name);
 }
-}
 
 function escapeQ(s: string) {
   return s.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
