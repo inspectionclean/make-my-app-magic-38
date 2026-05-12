@@ -5,15 +5,55 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_calendar/calen
 const CALENDAR_ID = "primary";
 const SERVICE_TYPES = ["Hood Clean", "Repair", "Call Back", "Estimate"];
 
-function parseSummary(summary: string | undefined): { service_type: string | null; customer_name: string } {
+/**
+ * Clean a single customer name:
+ * - Strip SMS phone tags:  #+18645551234#
+ * - Strip status prefixes: Confirmed:, Pending:, MAYBE
+ * - Strip trailing punctuation
+ */
+function cleanCustomerName(raw: string): string {
+  return raw
+    .replace(/#\+?[\d\s\-().]{7,}#/g, "")
+    .replace(/^(confirmed|pending|maybe)\s*:?\s*/i, "")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    .replace(/[-–—,:.]+$/, "")
+    .trim();
+}
+
+/**
+ * Parse a calendar event summary into one or more customer jobs.
+ */
+function parseSummary(summary: string | undefined): { service_type: string | null; customer_name: string }[] {
   const s = (summary ?? "").trim();
-  const m = s.match(/^\[([^\]]+)\]\s*(.*)$/);
-  if (m) {
-    const tag = m[1].trim();
+
+  let service_type: string | null = null;
+  let remainder = s;
+  const tagMatch = s.match(/^\[([^\]]+)\]\s*(.*)$/);
+  if (tagMatch) {
+    const tag = tagMatch[1].trim();
     const matched = SERVICE_TYPES.find((t) => t.toLowerCase() === tag.toLowerCase());
-    return { service_type: matched ?? tag, customer_name: m[2].trim() || s };
+    service_type = matched ?? tag;
+    remainder = tagMatch[2].trim();
   }
-  return { service_type: null, customer_name: s || "Untitled event" };
+
+  const cleaned = cleanCustomerName(remainder) || "Untitled event";
+
+  const segments = cleaned.split(/\s*\/\s*/).map((seg) => seg.trim()).filter(Boolean);
+
+  if (segments.length <= 1) {
+    return [{ service_type, customer_name: cleaned }];
+  }
+
+  const firstSeg = segments[0];
+  const brandMatch = firstSeg.match(/^(.*?)\s*#\d/);
+  const brand = brandMatch ? brandMatch[1].trim() : null;
+
+  return segments.map((seg) => {
+    const isJustNumber = /^#\d+$/.test(seg);
+    const customer_name = isJustNumber && brand ? `${brand} ${seg}` : seg;
+    return { service_type, customer_name };
+  });
 }
 
 export const Route = createFileRoute("/api/import-calendar")({
@@ -27,7 +67,6 @@ export const Route = createFileRoute("/api/import-calendar")({
         const userId = claims?.claims?.sub;
         if (!userId) return new Response("Unauthorized", { status: 401 });
 
-        // Admin gate
         const { data: roles } = await supabaseAdmin
           .from("user_roles")
           .select("role")
@@ -42,7 +81,6 @@ export const Route = createFileRoute("/api/import-calendar")({
           return new Response("Calendar not configured", { status: 500 });
         }
 
-        // Pull events from 30 days ago through 180 days ahead, paginate
         const timeMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
         const timeMax = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
         const events: any[] = [];
@@ -74,7 +112,6 @@ export const Route = createFileRoute("/api/import-calendar")({
           return new Response(e.message ?? "Failed to fetch calendar", { status: 500 });
         }
 
-        // Skip events that already have a corresponding job
         const eventIds = events.map((e) => e.id).filter(Boolean);
         const { data: existing } = await supabaseAdmin
           .from("jobs")
@@ -84,26 +121,35 @@ export const Route = createFileRoute("/api/import-calendar")({
 
         const toInsert: any[] = [];
         let skipped = 0;
+
         for (const ev of events) {
-          if (!ev.id || existingIds.has(ev.id)) {
-            skipped++;
-            continue;
-          }
+          if (!ev.id) { skipped++; continue; }
+
           const startIso = ev.start?.dateTime ?? (ev.start?.date ? `${ev.start.date}T09:00:00` : null);
-          if (!startIso) {
-            skipped++;
-            continue;
+          if (!startIso) { skipped++; continue; }
+
+          const parsed = parseSummary(ev.summary);
+
+          for (let i = 0; i < parsed.length; i++) {
+            const stableId = i === 0 ? ev.id : `${ev.id}__${i}`;
+
+            if (existingIds.has(stableId)) {
+              skipped++;
+              continue;
+            }
+
+            const { service_type, customer_name } = parsed[i];
+
+            toInsert.push({
+              customer_name,
+              address: ev.location ?? "(no address)",
+              scheduled_at: new Date(startIso).toISOString(),
+              description: ev.description ?? null,
+              service_type,
+              google_event_id: stableId,
+              created_by: userId,
+            });
           }
-          const { service_type, customer_name } = parseSummary(ev.summary);
-          toInsert.push({
-            customer_name,
-            address: ev.location ?? "(no address)",
-            scheduled_at: new Date(startIso).toISOString(),
-            description: ev.description ?? null,
-            service_type,
-            google_event_id: ev.id,
-            created_by: userId,
-          });
         }
 
         let inserted = 0;
