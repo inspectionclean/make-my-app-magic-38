@@ -445,7 +445,7 @@ export const Route = createFileRoute("/api/send-report")({
             </p>
           </div>`;
 
-        await enqueueEmail({
+        await skipSuppression({
           to: INTERNAL_EMAIL,
           subject: `[Internal] Job summary — ${cleanSubjectName} · ${new Date(job.scheduled_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
           html: internalHtml,
