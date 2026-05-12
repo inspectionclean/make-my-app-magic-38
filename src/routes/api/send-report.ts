@@ -89,6 +89,42 @@ async function enqueueEmail(opts: {
 
   if (enqErr) throw new Error(`Failed to enqueue email: ${enqErr.message}`);
 }
+async function skipSuppression(opts: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  templateName: string;
+  idempotencyKey: string;
+}): Promise<void> {
+  const messageId = crypto.randomUUID();
+  await supabaseAdmin.from("email_send_log").insert({
+    message_id: messageId,
+    template_name: opts.templateName,
+    recipient_email: opts.to,
+    status: "pending",
+  });
+
+  const { error: enqErr } = await supabaseAdmin.rpc("enqueue_email", {
+    queue_name: "transactional_emails",
+    payload: {
+      message_id: messageId,
+      to: opts.to,
+      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+      sender_domain: SENDER_DOMAIN,
+      subject: opts.subject,
+      html: opts.html,
+      text: opts.text,
+      purpose: "transactional",
+      label: opts.templateName,
+      idempotency_key: opts.idempotencyKey,
+      unsubscribe_token: "internal",
+      queued_at: new Date().toISOString(),
+    },
+  });
+
+  if (enqErr) throw new Error(`Failed to enqueue internal email: ${enqErr.message}`);
+}
 
 /** Strip SMS phone tags and status prefixes from customer name */
 function stripPhone(name: string): string {
