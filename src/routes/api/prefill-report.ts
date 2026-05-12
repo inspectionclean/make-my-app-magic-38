@@ -63,9 +63,24 @@ export const Route = createFileRoute("/api/prefill-report")({
         const { data: profile } = await supabaseAdmin
           .from("profiles").select("full_name").eq("id", userId).maybeSingle();
 
-        return Response.json({
-          job, intake, lastReport, firstTime, lastTime,
-          technicianName: profile?.full_name ?? null,
+        // Parse address into parts as fallback when intake is missing
+let parsedAddress: { street: string; city: string; state: string; zip: string } | null = null;
+if (job.address && job.address !== "(no address)") {
+  // Handles "840 Main St, Greenville, SC 29601" or "840 Main St, Greenville SC 29601"
+  const m = job.address.match(/^(.+?),\s*([^,]+?),?\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+  if (m) {
+    parsedAddress = { street: m[1].trim(), city: m[2].trim(), state: m[3].trim(), zip: m[4].trim() };
+  } else {
+    // Fallback: just use full address as street
+    parsedAddress = { street: job.address, city: "", state: "", zip: "" };
+  }
+}
+
+return Response.json({
+  job, intake, lastReport, firstTime, lastTime,
+  technicianName: profile?.full_name ?? null,
+  parsedAddress,
+});
         });
       },
     },
