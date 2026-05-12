@@ -166,9 +166,9 @@ function PerformanceReportPage() {
   const def = {
     business_name: pick(last?.business_name, intake?.business_name, job?.customer_name),
     address: pick(last?.address, intake?.service_address, job?.address),
-    city: pick(last?.city, intake?.city),
-    state: pick(last?.state, intake?.state),
-    zip: pick(last?.zip, intake?.zip),
+    city: pick(last?.city, intake?.city, prefill?.parsedAddress?.city),
+    state: pick(last?.state, intake?.state, prefill?.parsedAddress?.state),
+    zip: pick(last?.zip, intake?.zip, prefill?.parsedAddress?.zip),
     contact_name: pick(last?.contact_name, intake?.contact_name),
     phone: pick(last?.phone, intake?.phone, job?.customer_phone),
     email: pick(last?.email, intake?.email, job?.customer_email),
