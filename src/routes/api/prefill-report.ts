@@ -81,7 +81,6 @@ return Response.json({
   technicianName: profile?.full_name ?? null,
   parsedAddress,
 });
-        });
       },
     },
   },
