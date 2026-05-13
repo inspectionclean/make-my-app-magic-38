@@ -19,7 +19,6 @@ import { Route as JobsIdRouteImport } from './routes/jobs.$id'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as ApiSyncCalendarRouteImport } from './routes/api/sync-calendar'
 import { Route as ApiSendReportRouteImport } from './routes/api/send-report'
-import { Route as ApiSendDayRemindersRouteImport } from './routes/api/send-day-reminders'
 import { Route as ApiPrefillReportRouteImport } from './routes/api/prefill-report'
 import { Route as ApiImportDriveCustomersRouteImport } from './routes/api/import-drive-customers'
 import { Route as ApiImportCalendarRouteImport } from './routes/api/import-calendar'
@@ -33,6 +32,7 @@ import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/em
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicHooksSendDayRemindersRouteImport } from './routes/api/public/hooks/send-day-reminders'
 import { Route as ApiPublicHooksProcessEmailQueueRouteImport } from './routes/api/public/hooks/process-email-queue'
 import { Route as ApiPublicHooksOrganizeDriveRouteImport } from './routes/api/public/hooks/organize-drive'
 import { Route as ApiPublicHooksMonthlyDueEmailRouteImport } from './routes/api/public/hooks/monthly-due-email'
@@ -85,11 +85,6 @@ const ApiSyncCalendarRoute = ApiSyncCalendarRouteImport.update({
 const ApiSendReportRoute = ApiSendReportRouteImport.update({
   id: '/api/send-report',
   path: '/api/send-report',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSendDayRemindersRoute = ApiSendDayRemindersRouteImport.update({
-  id: '/api/send-day-reminders',
-  path: '/api/send-day-reminders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPrefillReportRoute = ApiPrefillReportRouteImport.update({
@@ -160,6 +155,12 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSendDayRemindersRoute =
+  ApiPublicHooksSendDayRemindersRouteImport.update({
+    id: '/api/public/hooks/send-day-reminders',
+    path: '/api/public/hooks/send-day-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksProcessEmailQueueRoute =
   ApiPublicHooksProcessEmailQueueRouteImport.update({
     id: '/api/public/hooks/process-email-queue',
@@ -195,7 +196,6 @@ export interface FileRoutesByFullPath {
   '/api/import-calendar': typeof ApiImportCalendarRoute
   '/api/import-drive-customers': typeof ApiImportDriveCustomersRoute
   '/api/prefill-report': typeof ApiPrefillReportRoute
-  '/api/send-day-reminders': typeof ApiSendDayRemindersRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -204,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/monthly-due-email': typeof ApiPublicHooksMonthlyDueEmailRoute
   '/api/public/hooks/organize-drive': typeof ApiPublicHooksOrganizeDriveRoute
   '/api/public/hooks/process-email-queue': typeof ApiPublicHooksProcessEmailQueueRoute
+  '/api/public/hooks/send-day-reminders': typeof ApiPublicHooksSendDayRemindersRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -224,7 +225,6 @@ export interface FileRoutesByTo {
   '/api/import-calendar': typeof ApiImportCalendarRoute
   '/api/import-drive-customers': typeof ApiImportDriveCustomersRoute
   '/api/prefill-report': typeof ApiPrefillReportRoute
-  '/api/send-day-reminders': typeof ApiSendDayRemindersRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -233,6 +233,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/monthly-due-email': typeof ApiPublicHooksMonthlyDueEmailRoute
   '/api/public/hooks/organize-drive': typeof ApiPublicHooksOrganizeDriveRoute
   '/api/public/hooks/process-email-queue': typeof ApiPublicHooksProcessEmailQueueRoute
+  '/api/public/hooks/send-day-reminders': typeof ApiPublicHooksSendDayRemindersRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -254,7 +255,6 @@ export interface FileRoutesById {
   '/api/import-calendar': typeof ApiImportCalendarRoute
   '/api/import-drive-customers': typeof ApiImportDriveCustomersRoute
   '/api/prefill-report': typeof ApiPrefillReportRoute
-  '/api/send-day-reminders': typeof ApiSendDayRemindersRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -263,6 +263,7 @@ export interface FileRoutesById {
   '/api/public/hooks/monthly-due-email': typeof ApiPublicHooksMonthlyDueEmailRoute
   '/api/public/hooks/organize-drive': typeof ApiPublicHooksOrganizeDriveRoute
   '/api/public/hooks/process-email-queue': typeof ApiPublicHooksProcessEmailQueueRoute
+  '/api/public/hooks/send-day-reminders': typeof ApiPublicHooksSendDayRemindersRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -285,7 +286,6 @@ export interface FileRouteTypes {
     | '/api/import-calendar'
     | '/api/import-drive-customers'
     | '/api/prefill-report'
-    | '/api/send-day-reminders'
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/email/unsubscribe'
@@ -294,6 +294,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/monthly-due-email'
     | '/api/public/hooks/organize-drive'
     | '/api/public/hooks/process-email-queue'
+    | '/api/public/hooks/send-day-reminders'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -314,7 +315,6 @@ export interface FileRouteTypes {
     | '/api/import-calendar'
     | '/api/import-drive-customers'
     | '/api/prefill-report'
-    | '/api/send-day-reminders'
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/email/unsubscribe'
@@ -323,6 +323,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/monthly-due-email'
     | '/api/public/hooks/organize-drive'
     | '/api/public/hooks/process-email-queue'
+    | '/api/public/hooks/send-day-reminders'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -343,7 +344,6 @@ export interface FileRouteTypes {
     | '/api/import-calendar'
     | '/api/import-drive-customers'
     | '/api/prefill-report'
-    | '/api/send-day-reminders'
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/email/unsubscribe'
@@ -352,6 +352,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/monthly-due-email'
     | '/api/public/hooks/organize-drive'
     | '/api/public/hooks/process-email-queue'
+    | '/api/public/hooks/send-day-reminders'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -371,7 +372,6 @@ export interface RootRouteChildren {
   ApiImportCalendarRoute: typeof ApiImportCalendarRoute
   ApiImportDriveCustomersRoute: typeof ApiImportDriveCustomersRoute
   ApiPrefillReportRoute: typeof ApiPrefillReportRoute
-  ApiSendDayRemindersRoute: typeof ApiSendDayRemindersRoute
   ApiSendReportRoute: typeof ApiSendReportRoute
   ApiSyncCalendarRoute: typeof ApiSyncCalendarRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
@@ -380,6 +380,7 @@ export interface RootRouteChildren {
   ApiPublicHooksMonthlyDueEmailRoute: typeof ApiPublicHooksMonthlyDueEmailRoute
   ApiPublicHooksOrganizeDriveRoute: typeof ApiPublicHooksOrganizeDriveRoute
   ApiPublicHooksProcessEmailQueueRoute: typeof ApiPublicHooksProcessEmailQueueRoute
+  ApiPublicHooksSendDayRemindersRoute: typeof ApiPublicHooksSendDayRemindersRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
@@ -455,13 +456,6 @@ declare module '@tanstack/react-router' {
       path: '/api/send-report'
       fullPath: '/api/send-report'
       preLoaderRoute: typeof ApiSendReportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/send-day-reminders': {
-      id: '/api/send-day-reminders'
-      path: '/api/send-day-reminders'
-      fullPath: '/api/send-day-reminders'
-      preLoaderRoute: typeof ApiSendDayRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/prefill-report': {
@@ -555,6 +549,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/send-day-reminders': {
+      id: '/api/public/hooks/send-day-reminders'
+      path: '/api/public/hooks/send-day-reminders'
+      fullPath: '/api/public/hooks/send-day-reminders'
+      preLoaderRoute: typeof ApiPublicHooksSendDayRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/process-email-queue': {
       id: '/api/public/hooks/process-email-queue'
       path: '/api/public/hooks/process-email-queue'
@@ -605,7 +606,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiImportCalendarRoute: ApiImportCalendarRoute,
   ApiImportDriveCustomersRoute: ApiImportDriveCustomersRoute,
   ApiPrefillReportRoute: ApiPrefillReportRoute,
-  ApiSendDayRemindersRoute: ApiSendDayRemindersRoute,
   ApiSendReportRoute: ApiSendReportRoute,
   ApiSyncCalendarRoute: ApiSyncCalendarRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
@@ -614,6 +614,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksMonthlyDueEmailRoute: ApiPublicHooksMonthlyDueEmailRoute,
   ApiPublicHooksOrganizeDriveRoute: ApiPublicHooksOrganizeDriveRoute,
   ApiPublicHooksProcessEmailQueueRoute: ApiPublicHooksProcessEmailQueueRoute,
+  ApiPublicHooksSendDayRemindersRoute: ApiPublicHooksSendDayRemindersRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
@@ -621,3 +622,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -122,7 +122,7 @@ async function enqueueEmail(opts: {
   if (error) throw new Error(`Failed to enqueue reminder: ${error.message}`);
 }
 
-export const Route = createFileRoute("/api/send-day-reminders")({
+export const Route = createFileRoute("/api/public/hooks/send-day-reminders")({
   server: {
     handlers: {
       POST: async ({ request }) => {
