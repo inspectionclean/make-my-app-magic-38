@@ -658,6 +658,19 @@ function IntakePage() {
                 </SelectContent>
               </Select>
             </Field>
+            <div className="flex items-start gap-3 pt-1">
+              <Checkbox
+                id="email_reminder"
+                checked={emailReminder}
+                onCheckedChange={(c) => setEmailReminder(Boolean(c))}
+              />
+              <Label htmlFor="email_reminder" className="font-normal cursor-pointer leading-snug">
+                Send email reminder on day of service
+                <span className="block text-xs text-muted-foreground mt-0.5">
+                  For customers whose phone doesn't accept SMS reminders
+                </span>
+              </Label>
+            </div>
             <Field label="Last Cleaning Date" id="last_cleaning">
               <Input id="last_cleaning" name="last_cleaning" type="date" value={form.last_cleaning} onChange={setField("last_cleaning")} />
             </Field>
