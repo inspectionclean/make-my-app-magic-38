@@ -22,6 +22,10 @@ const OLD_CUSTOMERS = [
   "ikes korner",
   "lakeview assisted",
   "blue ridge brewing",
+  "smoking butt",
+  "study hall",
+  "village inn",
+  "cross creek",
 ];
 
 const MONTH_NAMES = [
@@ -93,6 +97,10 @@ function calcNextDue(lastCleaning: string, frequency: string): Date | null {
   if (isNaN(last.getTime())) return null;
 
   const freq = frequency.toLowerCase().trim();
+
+  // Skip inactive customers
+  if (freq === "inactive") return null;
+
   let months = 0;
   if (freq.includes("bi-month") || freq.includes("bimonth") || freq === "bi monthly") months = 2;
   else if (freq.includes("month")) months = 1;
@@ -176,14 +184,21 @@ export const Route = createFileRoute("/api/rebuild-drive-folders")({
           try {
             // ── Route to "They will call" ──────────────────────────────────
             if (matchesList(name, THEY_WILL_CALL)) {
-              const folderId = await getOrCreateFolder(name, theyWillCallId);
+              await getOrCreateFolder(name, theyWillCallId);
               results.push({ customer: name, status: "they_will_call", folder: THEY_WILL_CALL_FOLDER });
               continue;
             }
 
             // ── Route to "Old Customers" ───────────────────────────────────
             if (matchesList(name, OLD_CUSTOMERS)) {
-              const folderId = await getOrCreateFolder(name, oldCustomersId);
+              await getOrCreateFolder(name, oldCustomersId);
+              results.push({ customer: name, status: "old_customers", folder: OLD_CUSTOMERS_FOLDER });
+              continue;
+            }
+
+            // ── Route inactive frequency to Old Customers ──────────────────
+            if ((intake.frequency ?? "").toLowerCase().trim() === "inactive") {
+              await getOrCreateFolder(name, oldCustomersId);
               results.push({ customer: name, status: "old_customers", folder: OLD_CUSTOMERS_FOLDER });
               continue;
             }
