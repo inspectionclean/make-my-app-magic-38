@@ -146,6 +146,7 @@ function IntakePage() {
   const [accessPanels, setAccessPanels] = useState("");
   const [roofAccess, setRoofAccess] = useState("");
   const [frequency, setFrequency] = useState("");
+  const [emailReminder, setEmailReminder] = useState(false);
   const [filters, setFilters] = useState<{ size: string; qty: string }[]>([{ size: "", qty: "" }]);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [searchQuery, setSearchQuery] = useState("");
@@ -349,6 +350,7 @@ function IntakePage() {
       equipment: equipment.length ? equipment : null,
       last_cleaning: (merged as any).last_cleaning || null,
       frequency: frequency || null,
+      email_reminder: emailReminder,
       filters: (() => {
         const cleaned = filters
           .map((f) => ({ size: f.size.trim(), qty: f.qty.trim() }))
