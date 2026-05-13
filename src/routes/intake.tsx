@@ -146,6 +146,7 @@ function IntakePage() {
   const [accessPanels, setAccessPanels] = useState("");
   const [roofAccess, setRoofAccess] = useState("");
   const [frequency, setFrequency] = useState("");
+  const [emailReminder, setEmailReminder] = useState(false);
   const [filters, setFilters] = useState<{ size: string; qty: string }[]>([{ size: "", qty: "" }]);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [searchQuery, setSearchQuery] = useState("");
@@ -285,6 +286,7 @@ function IntakePage() {
     setAccessPanels("");
     setRoofAccess("");
     setFrequency("");
+    setEmailReminder(false);
     setFilters([{ size: "", qty: "" }]);
     setSubmitAndNew(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -349,6 +351,7 @@ function IntakePage() {
       equipment: equipment.length ? equipment : null,
       last_cleaning: (merged as any).last_cleaning || null,
       frequency: frequency || null,
+      email_reminder: emailReminder,
       filters: (() => {
         const cleaned = filters
           .map((f) => ({ size: f.size.trim(), qty: f.qty.trim() }))
@@ -656,6 +659,19 @@ function IntakePage() {
                 </SelectContent>
               </Select>
             </Field>
+            <div className="flex items-start gap-3 pt-1">
+              <Checkbox
+                id="email_reminder"
+                checked={emailReminder}
+                onCheckedChange={(c) => setEmailReminder(Boolean(c))}
+              />
+              <Label htmlFor="email_reminder" className="font-normal cursor-pointer leading-snug">
+                Send email reminder on day of service
+                <span className="block text-xs text-muted-foreground mt-0.5">
+                  For customers whose phone doesn't accept SMS reminders
+                </span>
+              </Label>
+            </div>
             <Field label="Last Cleaning Date" id="last_cleaning">
               <Input id="last_cleaning" name="last_cleaning" type="date" value={form.last_cleaning} onChange={setField("last_cleaning")} />
             </Field>

@@ -112,6 +112,7 @@ export type Database = {
           created_at: string
           duct_runs: number | null
           email: string
+          email_reminder: boolean
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
           equipment: string[] | null
@@ -149,6 +150,7 @@ export type Database = {
           created_at?: string
           duct_runs?: number | null
           email: string
+          email_reminder?: boolean
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           equipment?: string[] | null
@@ -186,6 +188,7 @@ export type Database = {
           created_at?: string
           duct_runs?: number | null
           email?: string
+          email_reminder?: boolean
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           equipment?: string[] | null

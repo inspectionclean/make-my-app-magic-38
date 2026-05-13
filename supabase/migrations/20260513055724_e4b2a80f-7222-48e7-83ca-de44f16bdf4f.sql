@@ -1,0 +1,1 @@
+ALTER TABLE public.intake_submissions ADD COLUMN IF NOT EXISTS email_reminder boolean NOT NULL DEFAULT false;
