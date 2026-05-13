@@ -35,6 +35,7 @@ const OLD_CUSTOMERS = [
   "flying biscuit",
   "urban wren",
   "links o tryon",
+  "steak n shake",
 ];
 
 const MONTH_NAMES = [
