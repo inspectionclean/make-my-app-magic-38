@@ -236,6 +236,7 @@ const MONTH_NAMES = [
 function cadenceMonths(serviceType?: string | null): number | null {
   const s = (serviceType ?? "").toLowerCase().trim();
   if (!s) return null;
+  if (s.includes("bi-month") || s.includes("bimonth") || s.includes("bi month") || s.includes("every other month")) return 2;
   if (s.includes("month")) return 1;
   if (s.includes("quarter")) return 3;
   if (s.includes("semi") || s.includes("bi-annual") || s.includes("biannual") || s.includes("6 month")) return 6;
