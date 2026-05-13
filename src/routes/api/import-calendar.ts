@@ -81,7 +81,7 @@ export const Route = createFileRoute("/api/import-calendar")({
           return new Response("Calendar not configured", { status: 500 });
         }
 
-        const timeMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const timeMin = new Date(Date.now() - 730 * 24 * 60 * 60 * 1000).toISOString();
         const timeMax = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
         const events: any[] = [];
         let pageToken: string | undefined;
