@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MapPin, Users, CalendarArrowDown, ChevronLeft, ChevronRight, List, CalendarDays, FolderInput } from "lucide-react";
+import { Plus, MapPin, Users, CalendarArrowDown, ChevronLeft, ChevronRight, List, CalendarDays, FolderInput, FolderTree } from "lucide-react";
 import { format, startOfWeek, endOfWeek, addDays, addWeeks, isSameDay, isSameWeek } from "date-fns";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ function AdminHome() {
   const qc = useQueryClient();
   const [importing, setImporting] = useState(false);
   const [importingDrive, setImportingDrive] = useState(false);
+  const [rebuildingFolders, setRebuildingFolders] = useState(false);
   const [view, setView] = useState<"list" | "week">("list");
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
 
@@ -100,6 +101,30 @@ function AdminHome() {
     }
   };
 
+  const rebuildDriveFolders = async () => {
+    setRebuildingFolders(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const res = await fetch("/api/rebuild-drive-folders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sess.session?.access_token ?? ""}`,
+        },
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const json = await res.json();
+      const s = json.summary ?? json;
+      toast.success(
+        `Folders rebuilt: ${s.active ?? 0} active, ${s.they_will_call ?? 0} will call, ${s.old_customers ?? 0} old, ${s.skipped ?? 0} skipped`
+      );
+    } catch (e: any) {
+      toast.error(e.message ?? "Rebuild failed");
+    } finally {
+      setRebuildingFolders(false);
+    }
+  };
+
   return (
     <AppShell>
       <div className="flex items-center justify-between mb-4">
@@ -120,6 +145,10 @@ function AdminHome() {
           <Button size="sm" variant="outline" onClick={importFromDrive} disabled={importingDrive}>
             <FolderInput className="h-4 w-4 mr-1" />
             {importingDrive ? "Importing…" : "Import Drive"}
+          </Button>
+          <Button size="sm" variant="outline" onClick={rebuildDriveFolders} disabled={rebuildingFolders}>
+            <FolderTree className="h-4 w-4 mr-1" />
+            {rebuildingFolders ? "Rebuilding…" : "Rebuild Drive Folders"}
           </Button>
           <Button asChild size="sm" variant="outline">
             <Link to="/admin/users"><Users className="h-4 w-4 mr-1" />Team</Link>
