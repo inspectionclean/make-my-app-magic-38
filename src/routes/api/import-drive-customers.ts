@@ -215,6 +215,7 @@ function parseProfileCsv(csv: string, folderName: string): CustomerData | null {
   const formatFrequency = (months: string): string => {
     const n = parseInt(months);
     if (n === 1) return "Monthly";
+    if (n === 2) return "Bi-Monthly";
     if (n === 3) return "Quarterly";
     if (n === 6) return "Semi-Annually";
     if (n === 12) return "Annually";
