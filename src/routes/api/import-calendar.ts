@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_calendar/calendar/v3";
-const CALENDAR_ID = "primary";
+const CALENDAR_ID = "service@inspectionclean.com";
 const SERVICE_TYPES = ["Hood Clean", "Repair", "Call Back", "Estimate"];
 
 /**
