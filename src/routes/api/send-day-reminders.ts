@@ -179,11 +179,30 @@ export const Route = createFileRoute("/api/send-day-reminders")({
               intake = data;
             }
 
+            // Try to match by a store/location identifier in the customer_name
+            // (e.g. "Burger King #7114" → "#7114"), so multi-location chains
+            // resolve to the right intake instead of a random sibling.
+            if (!intake && cleanName) {
+              const idMatch = (job.customer_name ?? "").match(/#\s*(\d{2,})/);
+              const storeId = idMatch?.[1];
+              if (storeId) {
+                const { data } = await supabaseAdmin
+                  .from("intake_submissions")
+                  .select("*")
+                  .ilike("business_name", `%${storeId}%`)
+                  .order("created_at", { ascending: false })
+                  .limit(1)
+                  .maybeSingle();
+                intake = data;
+              }
+            }
+
+            // Last-resort fallback: full cleaned business name (not just first word)
             if (!intake && cleanName) {
               const { data } = await supabaseAdmin
                 .from("intake_submissions")
                 .select("*")
-                .ilike("business_name", `%${cleanName.split(" ")[0]}%`)
+                .ilike("business_name", `%${cleanName}%`)
                 .order("created_at", { ascending: false })
                 .limit(1)
                 .maybeSingle();
