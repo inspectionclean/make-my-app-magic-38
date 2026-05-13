@@ -51,6 +51,20 @@ const FREQUENCY_OPTIONS = [
   "As Needed",
 ];
 
+<div className="flex items-center gap-3 pt-2">
+  <Checkbox
+    id="email_reminder"
+    checked={form.email_reminder === "true"}
+    onCheckedChange={(c) => setForm((f) => ({ ...f, email_reminder: c ? "true" : "false" }))}
+  />
+  <Label htmlFor="email_reminder" className="font-normal cursor-pointer">
+    Send email reminder on day of service
+    <span className="block text-xs text-muted-foreground mt-0.5">
+      For customers whose phone doesn't accept SMS reminders
+    </span>
+  </Label>
+</div>
+
 const schema = z.object({
   business_name: z.string().trim().min(1).max(200),
   contact_name: z.string().trim().min(1).max(200),
