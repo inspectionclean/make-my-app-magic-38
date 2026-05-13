@@ -45,6 +45,7 @@ const EQUIPMENT_OPTIONS = [
 
 const FREQUENCY_OPTIONS = [
   "Monthly",
+  "Bi-monthly",
   "Quarterly",
   "Semi-Annually",
   "Annually",
