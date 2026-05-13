@@ -6,6 +6,13 @@ import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Plus, MapPin, Users, CalendarArrowDown, ChevronLeft, ChevronRight, List, CalendarDays, FolderInput, FolderTree } from "lucide-react";
 import { format, startOfWeek, endOfWeek, addDays, addWeeks, isSameDay, isSameWeek } from "date-fns";
 import { useEffect, useState } from "react";
@@ -21,6 +28,10 @@ function AdminHome() {
   const [importing, setImporting] = useState(false);
   const [importingDrive, setImportingDrive] = useState(false);
   const [rebuildingFolders, setRebuildingFolders] = useState(false);
+  const [rebuildResult, setRebuildResult] = useState<null | {
+    summary: { active: number; they_will_call: number; old_customers: number; skipped: number; total: number };
+    results: { customer: string; status: string; folder?: string; reason?: string }[];
+  }>(null);
   const [view, setView] = useState<"list" | "week">("list");
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
 
@@ -118,6 +129,7 @@ function AdminHome() {
       toast.success(
         `Folders rebuilt: ${s.active ?? 0} active, ${s.they_will_call ?? 0} will call, ${s.old_customers ?? 0} old, ${s.skipped ?? 0} skipped`
       );
+      setRebuildResult({ summary: s, results: json.results ?? [] });
     } catch (e: any) {
       toast.error(e.message ?? "Rebuild failed");
     } finally {
@@ -189,6 +201,44 @@ function AdminHome() {
         {jobs?.length === 0 && <p className="text-sm text-muted-foreground">No jobs yet. Create one to get started.</p>}
       </div>
       )}
+      <Dialog open={!!rebuildResult} onOpenChange={(o) => !o && setRebuildResult(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Drive folder rebuild results</DialogTitle>
+            {rebuildResult && (
+              <DialogDescription>
+                {rebuildResult.summary.active} active · {rebuildResult.summary.they_will_call} will call ·{" "}
+                {rebuildResult.summary.old_customers} old · {rebuildResult.summary.skipped} skipped ·{" "}
+                {rebuildResult.summary.total} total
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="overflow-y-auto -mx-6 px-6">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-background">
+                <tr className="text-left border-b">
+                  <th className="py-2 pr-2">Customer</th>
+                  <th className="py-2 pr-2">Status</th>
+                  <th className="py-2">Folder / Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rebuildResult?.results.map((r, i) => (
+                  <tr key={i} className="border-b last:border-0">
+                    <td className="py-1.5 pr-2 font-medium">{r.customer}</td>
+                    <td className="py-1.5 pr-2">
+                      <Badge variant={r.status === "skipped" ? "destructive" : "secondary"} className="capitalize text-xs">
+                        {r.status.replace(/_/g, " ")}
+                      </Badge>
+                    </td>
+                    <td className="py-1.5 text-muted-foreground">{r.folder ?? r.reason ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
