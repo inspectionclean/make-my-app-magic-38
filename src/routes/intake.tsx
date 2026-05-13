@@ -286,6 +286,7 @@ function IntakePage() {
     setAccessPanels("");
     setRoofAccess("");
     setFrequency("");
+    setEmailReminder(false);
     setFilters([{ size: "", qty: "" }]);
     setSubmitAndNew(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
