@@ -140,15 +140,27 @@ export const Route = createFileRoute("/api/import-calendar")({
 
             const { service_type, customer_name } = parsed[i];
 
-            toInsert.push({
-              customer_name,
-              address: ev.location ?? "(no address)",
-              scheduled_at: new Date(startIso).toISOString(),
-              description: ev.description ?? null,
-              service_type,
-              google_event_id: stableId,
-              created_by: userId,
-            });
+            // Parse phone from description — format is #+1XXXXXXXXXX# on first line
+let customer_phone: string | null = null;
+if (ev.description) {
+  const phoneMatch = ev.description.match(/#(\+?1?\d{10,11})#/);
+  if (phoneMatch) {
+    const digits = phoneMatch[1].replace(/\D/g, "");
+    const ten = digits.length === 11 ? digits.slice(1) : digits;
+    customer_phone = `(${ten.slice(0,3)})${ten.slice(3,6)}-${ten.slice(6)}`;
+  }
+}
+
+toInsert.push({
+  customer_name,
+  address: ev.location ?? "(no address)",
+  scheduled_at: new Date(startIso).toISOString(),
+  description: ev.description ?? null,
+  service_type,
+  google_event_id: stableId,
+  customer_phone,
+  created_by: userId,
+});
           }
         }
 
