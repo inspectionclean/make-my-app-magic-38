@@ -4,7 +4,6 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const SENDER_DOMAIN = "notify.inspectionclean.com";
 const FROM_DOMAIN = "inspectionclean.com";
 const SITE_NAME = "Inspection Clean";
-const INTERNAL_EMAIL = "service@inspectionclean.com";
 const CONTACT_PHONE = "(864) 313-8418";
 
 function stripPhone(name: string): string {
@@ -76,18 +75,15 @@ async function enqueueEmail(opts: {
   html: string;
   text: string;
   idempotencyKey: string;
-  skipSuppression?: boolean;
 }): Promise<void> {
   const normalized = opts.to.toLowerCase();
 
-  if (!opts.skipSuppression) {
-    const { data: suppressed } = await supabaseAdmin
-      .from("suppressed_emails").select("id").eq("email", normalized).maybeSingle();
-    if (suppressed) return;
+  const { data: suppressed } = await supabaseAdmin
+    .from("suppressed_emails").select("id").eq("email", normalized).maybeSingle();
+  if (suppressed) return;
 
-    const unsubscribeToken = await getOrCreateUnsubscribeToken(opts.to);
-    if (!unsubscribeToken) return;
-  }
+  const unsubscribeToken = await getOrCreateUnsubscribeToken(opts.to);
+  if (!unsubscribeToken) return;
 
   const messageId = crypto.randomUUID();
   await supabaseAdmin.from("email_send_log").insert({
@@ -96,10 +92,6 @@ async function enqueueEmail(opts: {
     recipient_email: opts.to,
     status: "pending",
   });
-
-  const unsubscribeToken = opts.skipSuppression
-    ? "internal"
-    : (await getOrCreateUnsubscribeToken(opts.to)) ?? "internal";
 
   const { error } = await supabaseAdmin.rpc("enqueue_email", {
     queue_name: "transactional_emails",
@@ -126,8 +118,7 @@ export const Route = createFileRoute("/api/public/hooks/send-day-reminders")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // This endpoint is called by the cron job — verify it's an internal call
-        // or an authenticated admin
+        // Auth: accept cron key or authenticated admin
         const auth = request.headers.get("authorization");
         const expectedApiKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const cronSecret = process.env.CRON_SECRET;
@@ -142,13 +133,21 @@ export const Route = createFileRoute("/api/public/hooks/send-day-reminders")({
           if (!claims?.claims?.sub) return new Response("Unauthorized", { status: 401 });
         }
 
-        // Find all jobs scheduled for today (in ET)
-        const now = new Date();
-        const todayET = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-        const startOfDay = new Date(todayET);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(todayET);
-        endOfDay.setHours(23, 59, 59, 999);
+        // ── Build today's date window in Eastern Time ──────────────────────
+        // Use UTC offsets for EDT (UTC-4) to correctly bracket today ET
+        // regardless of where the server is running.
+        const nowET = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
+        const year = nowET.getFullYear();
+        const month = nowET.getMonth();
+        const day = nowET.getDate();
+
+        // Today 00:00 ET = today 04:00 UTC (EDT, UTC-4)
+        const startOfDay = new Date(Date.UTC(year, month, day, 4, 0, 0));
+        // Today 23:59 ET = tomorrow 03:59 UTC (EDT, UTC-4)
+        const endOfDay = new Date(Date.UTC(year, month, day + 1, 3, 59, 59));
+
+        // Also store today's date string for idempotency keys
+        const todayStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
         const { data: todaysJobs } = await supabaseAdmin
           .from("jobs")
@@ -169,9 +168,10 @@ export const Route = createFileRoute("/api/public/hooks/send-day-reminders")({
           const cleanName = stripPhone(job.customer_name ?? "");
 
           try {
-            // Look up intake submission to check email_reminder flag
+            // ── Find the matching intake submission ──────────────────────
             let intake: any = null;
 
+            // 1. Match by customer email (most reliable)
             if (job.customer_email) {
               const { data } = await supabaseAdmin
                 .from("intake_submissions")
@@ -183,10 +183,8 @@ export const Route = createFileRoute("/api/public/hooks/send-day-reminders")({
               intake = data;
             }
 
-            // Try to match by a store/location identifier in the customer_name
-            // (e.g. "Burger King #7114" → "#7114"), so multi-location chains
-            // resolve to the right intake instead of a random sibling.
-            if (!intake && cleanName) {
+            // 2. Match by store number (e.g. #7114) — best for chain locations
+            if (!intake) {
               const idMatch = (job.customer_name ?? "").match(/#\s*(\d{2,})/);
               const storeId = idMatch?.[1];
               if (storeId) {
@@ -201,7 +199,7 @@ export const Route = createFileRoute("/api/public/hooks/send-day-reminders")({
               }
             }
 
-            // Last-resort fallback: full cleaned business name (not just first word)
+            // 3. Match by full cleaned business name
             if (!intake && cleanName) {
               const { data } = await supabaseAdmin
                 .from("intake_submissions")
@@ -213,25 +211,25 @@ export const Route = createFileRoute("/api/public/hooks/send-day-reminders")({
               intake = data;
             }
 
-            // Skip if no intake or email_reminder not enabled
+            // Skip if no intake found or email_reminder not enabled
             if (!intake?.email_reminder) {
               skipped.push(cleanName);
               continue;
             }
 
-            // Skip if no customer email
+            // Skip if no email to send to
             const recipientEmail = job.customer_email || intake?.email;
             if (!recipientEmail) {
               skipped.push(`${cleanName} (no email)`);
               continue;
             }
 
-            const contactName = intake?.contact_name || job.customer_name;
+            const contactName = intake?.contact_name || cleanName;
             const address = job.address || intake?.service_address || "";
             const jobTime = formatTime(job.scheduled_at);
             const jobDate = formatDate(job.scheduled_at);
 
-            const subject = `Hood Cleaning Appointment Today at ${escapeHtml(cleanName)}`;
+            const subject = `Hood Cleaning Appointment Today at ${cleanName}`;
 
             const html = `
               <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:20px;color:#222">
@@ -257,14 +255,28 @@ export const Route = createFileRoute("/api/public/hooks/send-day-reminders")({
                 <p style="margin:24px 0 0;color:#666;font-size:13px">— ${escapeHtml(SITE_NAME)}</p>
               </div>`;
 
-            const text = `Hood Cleaning Appointment Today at ${cleanName}\n\nHi ${contactName},\n\nThis is a reminder that your scheduled hood cleaning is today, ${jobDate} at ${jobTime}.\n\nPlease ensure access is available at ${address}.\n\nPlease ensure all equipment is off and cooled down by ${jobTime}.\n\nQuestions? Call us at ${CONTACT_PHONE}.\n\n— ${SITE_NAME}`;
+            const text = [
+              `Hood Cleaning Appointment Today at ${cleanName}`,
+              ``,
+              `Hi ${contactName},`,
+              ``,
+              `This is a reminder that your scheduled hood cleaning is today, ${jobDate} at ${jobTime}.`,
+              ``,
+              `Please ensure access is available at ${address}.`,
+              ``,
+              `Please ensure all equipment is off and cooled down by ${jobTime}.`,
+              ``,
+              `Questions? Call us at ${CONTACT_PHONE}.`,
+              ``,
+              `— ${SITE_NAME}`,
+            ].join("\n");
 
             await enqueueEmail({
               to: recipientEmail,
               subject,
               html,
               text,
-              idempotencyKey: `day-reminder-${job.id}-${todayET.toISOString().slice(0, 10)}`,
+              idempotencyKey: `day-reminder-${job.id}-${todayStr}`,
             });
 
             sent.push(cleanName);
