@@ -129,7 +129,11 @@ export const Route = createFileRoute("/api/public/hooks/send-day-reminders")({
         // This endpoint is called by the cron job — verify it's an internal call
         // or an authenticated admin
         const auth = request.headers.get("authorization");
-        const isCron = request.headers.get("x-cron-secret") === process.env.CRON_SECRET;
+        const expectedApiKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const cronSecret = process.env.CRON_SECRET;
+        const isCron =
+          request.headers.get("apikey") === expectedApiKey ||
+          (!!cronSecret && request.headers.get("x-cron-secret") === cronSecret);
 
         if (!isCron) {
           if (!auth?.startsWith("Bearer ")) return new Response("Unauthorized", { status: 401 });
