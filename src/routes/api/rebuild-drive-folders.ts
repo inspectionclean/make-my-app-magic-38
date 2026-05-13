@@ -26,6 +26,15 @@ const OLD_CUSTOMERS = [
   "study hall",
   "village inn",
   "cross creek",
+  "delaney",
+  "farmhouse tacos",
+  "gerhard",
+  "bellwether",
+  "southend",
+  "coral",
+  "flying biscuit",
+  "urban wren",
+  "links o tryon",
 ];
 
 const MONTH_NAMES = [
