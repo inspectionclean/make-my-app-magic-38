@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MapPin, Users, CalendarArrowDown, ChevronLeft, ChevronRight, List, CalendarDays } from "lucide-react";
+import { Plus, MapPin, Users, CalendarArrowDown, ChevronLeft, ChevronRight, List, CalendarDays, FolderInput } from "lucide-react";
 import { format, startOfWeek, endOfWeek, addDays, addWeeks, isSameDay, isSameWeek } from "date-fns";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ function AdminHome() {
   const location = useLocation();
   const qc = useQueryClient();
   const [importing, setImporting] = useState(false);
+  const [importingDrive, setImportingDrive] = useState(false);
   const [view, setView] = useState<"list" | "week">("list");
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
 
@@ -76,6 +77,29 @@ function AdminHome() {
     }
   };
 
+  const importFromDrive = async () => {
+    setImportingDrive(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const res = await fetch("/api/import-drive-customers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sess.session?.access_token ?? ""}`,
+        },
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const json = await res.json();
+      const s = json.summary ?? json;
+      toast.success(`Drive import: ${s.imported ?? 0} imported, ${s.skipped ?? 0} skipped, ${s.errors ?? 0} errors`);
+      qc.invalidateQueries({ queryKey: ["admin-jobs"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Drive import failed");
+    } finally {
+      setImportingDrive(false);
+    }
+  };
+
   return (
     <AppShell>
       <div className="flex items-center justify-between mb-4">
@@ -92,6 +116,10 @@ function AdminHome() {
           <Button size="sm" variant="outline" onClick={importFromCalendar} disabled={importing}>
             <CalendarArrowDown className="h-4 w-4 mr-1" />
             {importing ? "Importing…" : "Import"}
+          </Button>
+          <Button size="sm" variant="outline" onClick={importFromDrive} disabled={importingDrive}>
+            <FolderInput className="h-4 w-4 mr-1" />
+            {importingDrive ? "Importing…" : "Import Drive"}
           </Button>
           <Button asChild size="sm" variant="outline">
             <Link to="/admin/users"><Users className="h-4 w-4 mr-1" />Team</Link>

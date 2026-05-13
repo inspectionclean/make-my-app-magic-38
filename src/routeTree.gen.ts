@@ -20,6 +20,7 @@ import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe
 import { Route as ApiSyncCalendarRouteImport } from './routes/api/sync-calendar'
 import { Route as ApiSendReportRouteImport } from './routes/api/send-report'
 import { Route as ApiPrefillReportRouteImport } from './routes/api/prefill-report'
+import { Route as ApiImportDriveCustomersRouteImport } from './routes/api/import-drive-customers'
 import { Route as ApiImportCalendarRouteImport } from './routes/api/import-calendar'
 import { Route as ApiDriveUploadRouteImport } from './routes/api/drive-upload'
 import { Route as ApiDriveCustomerFilesRouteImport } from './routes/api/drive-customer-files'
@@ -88,6 +89,11 @@ const ApiSendReportRoute = ApiSendReportRouteImport.update({
 const ApiPrefillReportRoute = ApiPrefillReportRouteImport.update({
   id: '/api/prefill-report',
   path: '/api/prefill-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiImportDriveCustomersRoute = ApiImportDriveCustomersRouteImport.update({
+  id: '/api/import-drive-customers',
+  path: '/api/import-drive-customers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiImportCalendarRoute = ApiImportCalendarRouteImport.update({
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/api/drive-customer-files': typeof ApiDriveCustomerFilesRoute
   '/api/drive-upload': typeof ApiDriveUploadRoute
   '/api/import-calendar': typeof ApiImportCalendarRoute
+  '/api/import-drive-customers': typeof ApiImportDriveCustomersRoute
   '/api/prefill-report': typeof ApiPrefillReportRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/api/drive-customer-files': typeof ApiDriveCustomerFilesRoute
   '/api/drive-upload': typeof ApiDriveUploadRoute
   '/api/import-calendar': typeof ApiImportCalendarRoute
+  '/api/import-drive-customers': typeof ApiImportDriveCustomersRoute
   '/api/prefill-report': typeof ApiPrefillReportRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
@@ -236,6 +244,7 @@ export interface FileRoutesById {
   '/api/drive-customer-files': typeof ApiDriveCustomerFilesRoute
   '/api/drive-upload': typeof ApiDriveUploadRoute
   '/api/import-calendar': typeof ApiImportCalendarRoute
+  '/api/import-drive-customers': typeof ApiImportDriveCustomersRoute
   '/api/prefill-report': typeof ApiPrefillReportRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
@@ -265,6 +274,7 @@ export interface FileRouteTypes {
     | '/api/drive-customer-files'
     | '/api/drive-upload'
     | '/api/import-calendar'
+    | '/api/import-drive-customers'
     | '/api/prefill-report'
     | '/api/send-report'
     | '/api/sync-calendar'
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/api/drive-customer-files'
     | '/api/drive-upload'
     | '/api/import-calendar'
+    | '/api/import-drive-customers'
     | '/api/prefill-report'
     | '/api/send-report'
     | '/api/sync-calendar'
@@ -319,6 +330,7 @@ export interface FileRouteTypes {
     | '/api/drive-customer-files'
     | '/api/drive-upload'
     | '/api/import-calendar'
+    | '/api/import-drive-customers'
     | '/api/prefill-report'
     | '/api/send-report'
     | '/api/sync-calendar'
@@ -345,6 +357,7 @@ export interface RootRouteChildren {
   ApiDriveCustomerFilesRoute: typeof ApiDriveCustomerFilesRoute
   ApiDriveUploadRoute: typeof ApiDriveUploadRoute
   ApiImportCalendarRoute: typeof ApiImportCalendarRoute
+  ApiImportDriveCustomersRoute: typeof ApiImportDriveCustomersRoute
   ApiPrefillReportRoute: typeof ApiPrefillReportRoute
   ApiSendReportRoute: typeof ApiSendReportRoute
   ApiSyncCalendarRoute: typeof ApiSyncCalendarRoute
@@ -436,6 +449,13 @@ declare module '@tanstack/react-router' {
       path: '/api/prefill-report'
       fullPath: '/api/prefill-report'
       preLoaderRoute: typeof ApiPrefillReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/import-drive-customers': {
+      id: '/api/import-drive-customers'
+      path: '/api/import-drive-customers'
+      fullPath: '/api/import-drive-customers'
+      preLoaderRoute: typeof ApiImportDriveCustomersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/import-calendar': {
@@ -563,6 +583,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDriveCustomerFilesRoute: ApiDriveCustomerFilesRoute,
   ApiDriveUploadRoute: ApiDriveUploadRoute,
   ApiImportCalendarRoute: ApiImportCalendarRoute,
+  ApiImportDriveCustomersRoute: ApiImportDriveCustomersRoute,
   ApiPrefillReportRoute: ApiPrefillReportRoute,
   ApiSendReportRoute: ApiSendReportRoute,
   ApiSyncCalendarRoute: ApiSyncCalendarRoute,
