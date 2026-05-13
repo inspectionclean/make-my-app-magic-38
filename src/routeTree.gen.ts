@@ -19,6 +19,7 @@ import { Route as JobsIdRouteImport } from './routes/jobs.$id'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as ApiSyncCalendarRouteImport } from './routes/api/sync-calendar'
 import { Route as ApiSendReportRouteImport } from './routes/api/send-report'
+import { Route as ApiSendDayRemindersRouteImport } from './routes/api/send-day-reminders'
 import { Route as ApiPrefillReportRouteImport } from './routes/api/prefill-report'
 import { Route as ApiImportDriveCustomersRouteImport } from './routes/api/import-drive-customers'
 import { Route as ApiImportCalendarRouteImport } from './routes/api/import-calendar'
@@ -84,6 +85,11 @@ const ApiSyncCalendarRoute = ApiSyncCalendarRouteImport.update({
 const ApiSendReportRoute = ApiSendReportRouteImport.update({
   id: '/api/send-report',
   path: '/api/send-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSendDayRemindersRoute = ApiSendDayRemindersRouteImport.update({
+  id: '/api/send-day-reminders',
+  path: '/api/send-day-reminders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPrefillReportRoute = ApiPrefillReportRouteImport.update({
@@ -189,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/api/import-calendar': typeof ApiImportCalendarRoute
   '/api/import-drive-customers': typeof ApiImportDriveCustomersRoute
   '/api/prefill-report': typeof ApiPrefillReportRoute
+  '/api/send-day-reminders': typeof ApiSendDayRemindersRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -217,6 +224,7 @@ export interface FileRoutesByTo {
   '/api/import-calendar': typeof ApiImportCalendarRoute
   '/api/import-drive-customers': typeof ApiImportDriveCustomersRoute
   '/api/prefill-report': typeof ApiPrefillReportRoute
+  '/api/send-day-reminders': typeof ApiSendDayRemindersRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/api/import-calendar': typeof ApiImportCalendarRoute
   '/api/import-drive-customers': typeof ApiImportDriveCustomersRoute
   '/api/prefill-report': typeof ApiPrefillReportRoute
+  '/api/send-day-reminders': typeof ApiSendDayRemindersRoute
   '/api/send-report': typeof ApiSendReportRoute
   '/api/sync-calendar': typeof ApiSyncCalendarRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -276,6 +285,7 @@ export interface FileRouteTypes {
     | '/api/import-calendar'
     | '/api/import-drive-customers'
     | '/api/prefill-report'
+    | '/api/send-day-reminders'
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/email/unsubscribe'
@@ -304,6 +314,7 @@ export interface FileRouteTypes {
     | '/api/import-calendar'
     | '/api/import-drive-customers'
     | '/api/prefill-report'
+    | '/api/send-day-reminders'
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/email/unsubscribe'
@@ -332,6 +343,7 @@ export interface FileRouteTypes {
     | '/api/import-calendar'
     | '/api/import-drive-customers'
     | '/api/prefill-report'
+    | '/api/send-day-reminders'
     | '/api/send-report'
     | '/api/sync-calendar'
     | '/email/unsubscribe'
@@ -359,6 +371,7 @@ export interface RootRouteChildren {
   ApiImportCalendarRoute: typeof ApiImportCalendarRoute
   ApiImportDriveCustomersRoute: typeof ApiImportDriveCustomersRoute
   ApiPrefillReportRoute: typeof ApiPrefillReportRoute
+  ApiSendDayRemindersRoute: typeof ApiSendDayRemindersRoute
   ApiSendReportRoute: typeof ApiSendReportRoute
   ApiSyncCalendarRoute: typeof ApiSyncCalendarRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
@@ -442,6 +455,13 @@ declare module '@tanstack/react-router' {
       path: '/api/send-report'
       fullPath: '/api/send-report'
       preLoaderRoute: typeof ApiSendReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/send-day-reminders': {
+      id: '/api/send-day-reminders'
+      path: '/api/send-day-reminders'
+      fullPath: '/api/send-day-reminders'
+      preLoaderRoute: typeof ApiSendDayRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/prefill-report': {
@@ -585,6 +605,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiImportCalendarRoute: ApiImportCalendarRoute,
   ApiImportDriveCustomersRoute: ApiImportDriveCustomersRoute,
   ApiPrefillReportRoute: ApiPrefillReportRoute,
+  ApiSendDayRemindersRoute: ApiSendDayRemindersRoute,
   ApiSendReportRoute: ApiSendReportRoute,
   ApiSyncCalendarRoute: ApiSyncCalendarRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
@@ -600,13 +621,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
