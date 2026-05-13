@@ -140,6 +140,7 @@ function IntakePage() {
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitAndNew, setSubmitAndNew] = useState(false);
   const [equipment, setEquipment] = useState<string[]>([]);
   const [fireSuppression, setFireSuppression] = useState("");
   const [accessPanels, setAccessPanels] = useState("");
@@ -277,6 +278,18 @@ function IntakePage() {
     toast.success(`Prefilled from ${customer.source === "intake" ? "previous intake" : "job history"} — review and update as needed`);
   };
 
+  const resetForm = () => {
+    setForm(EMPTY_FORM);
+    setEquipment([]);
+    setFireSuppression("");
+    setAccessPanels("");
+    setRoofAccess("");
+    setFrequency("");
+    setFilters([{ size: "", qty: "" }]);
+    setSubmitAndNew(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const updateFilter = (i: number, key: "size" | "qty", value: string) =>
     setFilters((prev) => prev.map((f, idx) => (idx === i ? { ...f, [key]: value } : f)));
   const addFilter = () => setFilters((prev) => [...prev, { size: "", qty: "" }]);
@@ -369,8 +382,14 @@ function IntakePage() {
       }).catch(() => {});
     } catch {}
 
-    setSubmitted(true);
-    toast.success("Intake submitted successfully.");
+    if (submitAndNew) {
+      resetForm();
+      setSubmitted(false);
+      toast.success("Intake saved — ready for next customer");
+    } else {
+      setSubmitted(true);
+      toast.success("Intake submitted successfully.");
+    }
   };
 
   if (submitted) {
@@ -379,7 +398,7 @@ function IntakePage() {
         <main className="mx-auto max-w-2xl px-4 py-16">
           <h1 className="text-2xl font-semibold text-foreground">Submitted!</h1>
           <p className="mt-2 text-muted-foreground">Intake form saved successfully.</p>
-          <Button className="mt-6" onClick={() => { setSubmitted(false); setForm(EMPTY_FORM); setEquipment([]); setFireSuppression(""); setAccessPanels(""); setRoofAccess(""); setFrequency(""); setFilters([{ size: "", qty: "" }]); }}>
+          <Button className="mt-6" onClick={resetForm}>
             Add another customer
           </Button>
         </main>
@@ -645,9 +664,20 @@ function IntakePage() {
             </Field>
           </Section>
 
-          <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
-            {submitting ? "Submitting..." : "Submit Intake"}
-          </Button>
+          <div className="flex gap-3 flex-wrap">
+            <Button type="submit" disabled={submitting} className="flex-1 sm:flex-none">
+              {submitting ? "Submitting..." : "Submit Intake"}
+            </Button>
+            <Button
+              type="submit"
+              variant="outline"
+              disabled={submitting}
+              className="flex-1 sm:flex-none"
+              onClick={() => setSubmitAndNew(true)}
+            >
+              {submitting ? "Submitting..." : "Submit & add another"}
+            </Button>
+          </div>
         </form>
       </main>
     </AppShell>
